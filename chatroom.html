@@ -70,9 +70,18 @@
     .bubble { min-width:0;padding:10px 13px;border:1px solid var(--line);border-radius:4px 14px 14px 14px;background:#17253d; }
     .message-meta { display:flex;align-items:center;gap:9px;margin-bottom:4px; }
     .message-name { color:var(--accent);font-size:12px;font-weight:800; }
-    .message-name.admin-name, #currentUser.admin-name, .friend-name.admin-name {
-      color:#ff4d5e !important;font-weight:800;text-shadow:0 0 12px rgba(255,77,94,.22);
+    .admin-name {
+      color:#ff4057 !important;font-weight:900 !important;
+      text-shadow:0 0 12px rgba(255,64,87,.28);
     }
+    .admin-badge {
+      display:inline-flex;align-items:center;margin-left:7px;padding:3px 7px;
+      border:1px solid rgba(255,64,87,.35);border-radius:999px;
+      color:#ff6678;background:rgba(255,64,87,.10);
+      font-size:9px;font-weight:900;letter-spacing:.08em;
+    }
+    .admin-link { display:none; }
+    .admin-link.visible { display:inline-flex; }
     .message-time { color:#71829d;font-size:10px; }
     .message-text { color:#e4edf9;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere; }
     .empty { margin:auto;color:#71829d;text-align:center;font-size:13px; }
@@ -117,7 +126,7 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">W</span><span>WRECKROOM</span></div>
-    <div class="top-actions"><span id="currentUser">Connecting…</span><button id="logoutBtn" type="button">Sign out</button></div>
+    <div class="top-actions"><span id="currentUser">Connecting…</span><a id="adminLink" class="admin-link" href="admin.html"><button type="button">Admin panel</button></a><button id="logoutBtn" type="button">Sign out</button></div>
   </header>
 
   <main class="shell">
@@ -271,7 +280,16 @@
         username = String(usernameSnapshot.val()).slice(0, 30) || "Member";
         const currentUserLabel = document.getElementById("currentUser");
         currentUserLabel.textContent = username;
-        if (uid === ADMIN_UID) currentUserLabel.classList.add("admin-name");
+        if (uid === ADMIN_UID) {
+          currentUserLabel.classList.add("admin-name");
+          currentUserLabel.style.setProperty("color", "#ff4057", "important");
+          currentUserLabel.style.setProperty("font-weight", "900", "important");
+          const badge = document.createElement("span");
+          badge.className = "admin-badge";
+          badge.textContent = "ADMIN";
+          currentUserLabel.appendChild(badge);
+          document.getElementById("adminLink").classList.add("visible");
+        }
 
         const userStatusRef = ref(db, `onlineUsers/${uid}`);
         await onDisconnect(userStatusRef).remove();
