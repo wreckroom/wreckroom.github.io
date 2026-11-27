@@ -137,10 +137,19 @@
       const button=event.target.closest("[data-delete]");if(!button)return;
       const id=button.dataset.delete;
       if(!Object.prototype.hasOwnProperty.call(messages,id))return;
-      if(!confirm("Diese Nachricht wirklich dauerhaft löschen?"))return;
       button.disabled=true;
-      try{await remove(ref(db,"messages/"+id));}
-      catch(error){alert("Löschen fehlgeschlagen: "+error.message);button.disabled=false;}
+      button.textContent="Lösche…";
+      try{
+        await remove(ref(db,"messages/"+id));
+      }catch(error){
+        button.textContent="Fehler";
+        button.disabled=false;
+        const notice=document.createElement("div");
+        notice.className="notice error";
+        notice.textContent="Nachricht konnte nicht gelöscht werden: "+error.message;
+        const target=$("messagesTable");
+        target.prepend(notice);
+      }
     });
     $("backBtn").addEventListener("click",()=>location.href="chatroom.html");
     $("logoutBtn").addEventListener("click",async()=>{await signOut(auth);location.href="index.html";});
