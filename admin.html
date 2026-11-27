@@ -30,7 +30,7 @@
     .danger{background:rgba(255,82,105,.1);color:#ff8292;border-color:rgba(255,82,105,.2);padding:7px 10px;font-size:11px}.empty{padding:26px;text-align:center;color:#71829d;font-size:13px}
     .notice{border:1px solid rgba(112,197,255,.18);background:rgba(112,197,255,.06);border-radius:12px;padding:13px 15px;color:#b9cce3;font-size:12px;line-height:1.6;margin-bottom:16px}
     .notice strong{color:var(--text)}.error{color:#ff8292}.hidden{display:none!important}
-    .mod-card{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.025)}.mod-icon{width:38px;height:38px;flex:0 0 38px;border-radius:12px;display:grid;place-items:center;font-size:17px;font-weight:900}.mod-icon.timeout{background:rgba(255,174,66,.13);color:#ffbd66}.mod-icon.banned{background:rgba(255,82,105,.14);color:#ff8292}.mod-main{min-width:0;flex:1}.mod-title{font-size:13px;font-weight:800}.mod-sub{margin-top:4px;color:var(--muted);font-size:11px;overflow-wrap:anywhere}.status-tag{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.04em}.status-tag.timeout{background:rgba(255,174,66,.13);color:#ffbd66}.status-tag.banned{background:rgba(255,82,105,.14);color:#ff8292}.mod-list{display:grid;gap:9px}.mod-actions{display:flex;gap:7px;flex-wrap:wrap}.mod-actions button{white-space:nowrap}
+    .mod-card{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.025)}.mod-icon{width:38px;height:38px;flex:0 0 38px;border-radius:12px;display:grid;place-items:center;font-size:17px;font-weight:900}.mod-icon.timeout{background:rgba(255,174,66,.13);color:#ffbd66}.mod-icon.banned{background:rgba(255,82,105,.14);color:#ff8292}.mod-main{min-width:0;flex:1}.mod-title{font-size:13px;font-weight:800}.mod-sub{margin-top:4px;color:var(--muted);font-size:11px;overflow-wrap:anywhere}.status-tag{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.04em}.status-tag.timeout{background:rgba(255,174,66,.13);color:#ffbd66}.status-tag.banned{background:rgba(255,82,105,.14);color:#ff8292}.timer-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid rgba(255,174,66,.22);border-radius:9px;background:rgba(255,174,66,.08);color:#ffd08c;font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}.mod-list{display:grid;gap:9px}.mod-actions{display:flex;gap:7px;flex-wrap:wrap}.mod-actions button{white-space:nowrap}
     .select,.reason{width:100%;background:#0b1322;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none;font:inherit}.reason{min-height:82px;resize:vertical}.modal-backdrop{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:18px}.modal{width:min(480px,100%);padding:22px;background:#111b2d;border:1px solid var(--line);border-radius:18px;box-shadow:0 25px 90px #0009}.modal h2{margin:0 0 5px}.field{display:grid;gap:7px;margin:15px 0}.field label{font-size:12px;color:var(--muted);font-weight:700}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.ban{background:rgba(255,82,105,.14);color:#ff8292;border-color:rgba(255,82,105,.25)}.success{color:var(--green)}
     #loading{padding:70px 20px;text-align:center;color:var(--muted)}#denied{max-width:560px;margin:12vh auto;padding:30px;text-align:center}#denied h1{margin-top:0}
     @media(max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:180px minmax(0,1fr);padding:15px;gap:13px}}
@@ -146,9 +146,25 @@
       $("moderationCaption").textContent=entries.length+" aktiv";
       if(!entries.length){$("moderationTable").innerHTML='<div class="empty">✨ Keine aktiven Timeouts oder Bans.</div>';return;}
       $("moderationTable").innerHTML='<div class="mod-list">'+entries.map(([id,m])=>{
-        const banned=m.status==="banned",expires=banned?"Dauerhaft gesperrt":"Läuft ab: "+date(m.timeoutUntil);
-        return '<article class="mod-card"><div class="mod-icon '+(banned?'banned':'timeout')+'">'+(banned?'⊘':'◷')+'</div><div class="mod-main"><div class="mod-title">'+esc(userName(id))+'</div><div class="mod-sub">'+esc(m.reason||"Kein Grund angegeben")+' · '+esc(expires)+'</div></div><span class="status-tag '+(banned?'banned':'timeout')+'">'+(banned?'BANNED':'TIMEOUT')+'</span><div class="mod-actions"><button data-moderate="'+esc(id)+'">Verwalten</button><button data-unmoderate="'+esc(id)+'">Aufheben</button></div></article>';
+        const banned=m.status==="banned",expires=banned?"Dauerhaft gesperrt":"Läuft ab: "+esc(date(m.timeoutUntil));
+        return '<article class="mod-card"><div class="mod-icon '+(banned?'banned':'timeout')+'">'+(banned?'⊘':'◷')+'</div><div class="mod-main"><div class="mod-title">'+esc(userName(id))+'</div><div class="mod-sub">'+esc(m.reason||"Kein Grund angegeben")+' · '+expires+'</div></div><span class="status-tag '+(banned?'banned':'timeout')+'">'+(banned?'BANNED':'TIMEOUT')+'</span>'+(banned?'':'<span class="timer-chip" data-countdown="'+Number(m.timeoutUntil)+'">◷ Berechne…</span>')+'<div class="mod-actions"><button data-moderate="'+esc(id)+'">Verwalten</button><button data-unmoderate="'+esc(id)+'">Aufheben</button></div></article>';
       }).join("")+'</div>';
+      updateCountdowns();
+    }
+    function updateCountdowns(){
+      let expired=false;
+      document.querySelectorAll("[data-countdown]").forEach(node=>{
+        const remaining=Number(node.dataset.countdown)-Date.now();
+        if(remaining<=0){expired=true;return;}
+        let seconds=Math.floor(remaining/1000);
+        const days=Math.floor(seconds/86400);seconds%=86400;
+        const hours=Math.floor(seconds/3600);seconds%=3600;
+        const minutes=Math.floor(seconds/60);seconds%=60;
+        const pad=n=>String(n).padStart(2,"0");
+        node.textContent="◷ "+(days?days+"T ":"")+pad(hours)+":"+pad(minutes)+":"+pad(seconds);
+        node.title="Verbleibende Zeit";
+      });
+      if(expired)renderModeration();
     }
     function openModeration(id){
       if(!id||id===ADMIN_UID)return;
@@ -219,6 +235,7 @@
     });
     $("backBtn").addEventListener("click",()=>location.href="chatroom.html");
     $("logoutBtn").addEventListener("click",async()=>{await signOut(auth);location.href="index.html";});
+    setInterval(updateCountdowns,1000);
     onAuthStateChanged(auth,async user=>{
       if(!user){location.replace("index.html");return;}
       if(user.uid!==ADMIN_UID){$("loading").classList.add("hidden");$("denied").classList.remove("hidden");return;}
