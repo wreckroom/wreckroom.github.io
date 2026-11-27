@@ -94,6 +94,7 @@
     .composer input:focus { border-color:rgba(112,197,255,.65); }
     .send { color:#071321;background:linear-gradient(110deg,var(--accent),#9bb4ff);border:0;padding:12px 19px; }
     .composer-hint { min-height:15px;margin:7px 3px 0;color:#71829d;font-size:11px; }
+    .composer-hint.restriction-notice{display:block;margin:10px 0 0;padding:13px 15px;border:1px solid rgba(255,174,66,.28);border-radius:12px;background:rgba(255,174,66,.08);color:#ffcf91;font-size:12px;line-height:1.55}.composer-hint.restriction-notice.banned{border-color:rgba(255,82,105,.3);background:rgba(255,82,105,.09);color:#ff9aa7}.restriction-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:900;margin-bottom:4px}.restriction-sub{opacity:.9}
     .right-panel { padding:20px 16px;display:flex;flex-direction:column; }
     .right-panel h2 { margin:0 0 5px;font-size:15px; }
     .right-sub { margin:0 0 17px;color:var(--muted);font-size:12px; }
@@ -193,6 +194,29 @@
     let uid = null;
     let username = "Member";
     let ready = false;
+    let restricted = false;
+    let moderationTimer = null;
+
+    function applyModeration(record) {
+      const banned = record?.status === "banned";
+      const until = Number(record?.timeoutUntil || 0);
+      const timedOut = record?.status === "timeout" && until > Date.now();
+      restricted = banned || timedOut;
+      msgInput.disabled = restricted;
+      sendBtn.disabled = restricted || !ready;
+      composerHint.classList.toggle("restriction-notice", restricted);
+      composerHint.classList.toggle("banned", banned);
+      if (moderationTimer) clearTimeout(moderationTimer);
+      if (restricted) {
+        const title = banned ? "Du bist dauerhaft vom Chat ausgeschlossen" : "Du hast gerade einen Timeout";
+        const detail = banned ? "Dein Account kann aktuell keine Nachrichten senden." : `Du kannst ab ${new Date(until).toLocaleString("de-DE")} wieder schreiben.`;
+        const reason = record?.reason ? `Grund: ${String(record.reason).slice(0,240)}` : "Es wurde kein Grund angegeben.";
+        composerHint.innerHTML = `<div class="restriction-title">${banned ? "⛔" : "◷"} ${title}</div><div class="restriction-sub">${detail}<br>${reason}</div>`;
+        if (timedOut) moderationTimer = setTimeout(() => applyModeration(null), Math.min(until - Date.now() + 250, 2147483000));
+      } else {
+        composerHint.textContent = ready ? "Be kind to each other." : "Connecting…";
+      }
+    }
 
     function addMessage(message, key) {
       const empty = document.getElementById("emptyState");
@@ -279,18 +303,7 @@
         }
         username = String(usernameSnapshot.val()).slice(0, 30) || "Member";
         const moderationSnapshot = await get(child(ref(db), `moderation/${uid}`));
-        const moderationState = moderationSnapshot.val();
-        const blockedUntil = Number(moderationState?.timeoutUntil || 0);
-        if (moderationState?.status === "banned" || (moderationState?.status === "timeout" && blockedUntil > Date.now())) {
-          msgInput.disabled = true;
-          sendBtn.disabled = true;
-          const reason = moderationState.reason ? ` Grund: ${String(moderationState.reason).slice(0,240)}` : "";
-          const expiry = moderationState.status === "banned" ? "Dein Zugang zum Chat wurde dauerhaft gesperrt." : `Du bist bis ${new Date(blockedUntil).toLocaleString("de-DE")} vom Schreiben ausgeschlossen.`;
-          composerHint.textContent = expiry + reason;
-          document.getElementById("emptyState").textContent = "Chat derzeit nicht verfügbar.";
-          document.getElementById("currentUser").textContent = username;
-          return;
-        }
+        applyModeration(moderationSnapshot.val());
         const currentUserLabel = document.getElementById("currentUser");
         currentUserLabel.textContent = username;
         if (uid === ADMIN_UID) {
@@ -314,6 +327,10 @@
         });
         onValue(ref(db, "onlineUsers"), showOnline);
         ready = true;
+        const liveSendState = await get(child(ref(db), `moderation/${uid}`));
+        applyModeration(liveSendState.val());
+        onValue(ref(db, `moderation/${uid}`), snapshot => applyModeration(snapshot.val()));
+        sendBtn.disabled = restricted;
         msgInput.focus();
       } catch (error) {
         composerHint.textContent = error.message || "Could not connect to the chat. Please refresh.";
@@ -322,13 +339,19 @@
 
     document.getElementById("messageForm").addEventListener("submit", async event => {
       event.preventDefault();
-      if (!ready || !uid || sendBtn.disabled) return;
+      if (!ready || !uid || restricted || sendBtn.disabled) return;
       const text = msgInput.value.trim();
       if (!text) return;
 
       sendBtn.disabled = true;
       composerHint.textContent = "Sending…";
       try {
+        const latestModeration = (await get(child(ref(db), `moderation/${uid}`))).val();
+        const latestUntil = Number(latestModeration?.timeoutUntil || 0);
+        if (latestModeration?.status === "banned" || (latestModeration?.status === "timeout" && latestUntil > Date.now())) {
+          applyModeration(latestModeration);
+          return;
+        }
         await push(ref(db, "messages"), {
           uid, name: username, photoURL: auth.currentUser?.photoURL || "",
           text: text.slice(0, 1000), timestamp: serverTimestamp()
@@ -338,7 +361,7 @@
       } catch (error) {
         composerHint.textContent = error.message || "Message could not be sent.";
       } finally {
-        sendBtn.disabled = false;
+        sendBtn.disabled = restricted || !ready;
         msgInput.focus();
       }
     });
