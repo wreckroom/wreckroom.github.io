@@ -169,11 +169,11 @@
     async function renameUser(uid) {
       if (!uid) return;
       const currentName = userName(uid);
-      const proposed = prompt("Neuer Nutzername (5–20 Zeichen):", currentName);
+      const proposed = prompt("Neuer Nutzername (1–20 Zeichen):", currentName);
       if (proposed === null) return;
       const newName = proposed.trim();
-      if (newName.length < 5 || newName.length > 20 || !/^[A-Za-z0-9_]+$/.test(newName) || !/[A-Za-z0-9]/.test(newName)) {
-        alert("Der Name muss 5–20 Zeichen haben, darf nur Buchstaben, Zahlen und Unterstriche enthalten und mindestens einen Buchstaben oder eine Zahl enthalten.");
+      if (newName.length < 1 || newName.length > 20 || !/^[A-Za-z0-9_]+$/.test(newName) || !/[A-Za-z0-9]/.test(newName)) {
+        alert("Der Name muss 1–20 Zeichen haben, darf nur Buchstaben, Zahlen und Unterstriche enthalten und mindestens einen Buchstaben oder eine Zahl enthalten.");
         return;
       }
 
