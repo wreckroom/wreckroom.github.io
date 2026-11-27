@@ -1,148 +1,256 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sign in — Retro Cloud</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090d18">
+  <meta name="description" content="Wreckroom — a calm place to share thoughts and connect.">
+  <title>Wreckroom — Welcome</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#0f0f12;--hero:#0c1a26;--accent:#8bd3ff;--muted:#9aa6b2;--card:#0f1720;--glass:rgba(255,255,255,0.03);--radius:14px;}
-    html,body{height:100%;margin:0;font-family:Inter,system-ui;}
-    body{background:linear-gradient(180deg,#071122 0%,#0c0d10 100%);color:#e6eef7;display:flex;align-items:center;justify-content:center;padding:32px;}
-    .wrap{width:100%;max-width:1100px;height:80vh;display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:center;}
-    .hero{background:radial-gradient(600px 200px at 10% 20%,rgba(139,211,255,0.06),transparent 10%),linear-gradient(135deg,rgba(139,211,255,0.02),transparent 60%),var(--hero);border-radius:var(--radius);padding:48px;box-shadow:0 10px 30px rgba(2,6,12,0.6);display:flex;flex-direction:column;justify-content:center;}
-    .hero h1{font-family:"Playfair Display",serif;font-size:54px;margin:0 0 12px;line-height:1;color:#fff;}
-    .hero p{margin:0;color:var(--muted);font-size:18px;max-width:55ch;}
-    .hero .tag{display:inline-block;margin-top:20px;padding:8px 14px;background:rgba(139,211,255,0.06);color:var(--accent);border-radius:999px;font-weight:600;font-size:13px;}
-    .card{background:rgba(255,255,255,0.02);border-radius:var(--radius);padding:28px;box-shadow:0 12px 34px rgba(1,5,10,0.7);border:1px solid rgba(255,255,255,0.03);min-height:320px;display:flex;flex-direction:column;justify-content:center;}
-    input,button{font-size:15px;border-radius:10px;}
-    input{padding:12px 14px;border:1px solid rgba(255,255,255,0.03);background:var(--glass);color:#eaf6ff;}
-    button{cursor:pointer;}
-    button.primary{background:linear-gradient(90deg,var(--accent),#6ed0ff);color:#022331;border:none;padding:12px 14px;font-weight:700;}
-    button.ghost{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03);padding:10px 12px;font-weight:600;}
-    .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    :root {
+      color-scheme: dark;
+      --bg: #090d18;
+      --panel: rgba(18, 27, 45, .84);
+      --panel-2: #111b2d;
+      --line: rgba(160, 190, 230, .13);
+      --text: #edf4ff;
+      --muted: #9aaac2;
+      --accent: #70c5ff;
+      --accent-2: #8c9dff;
+      --danger: #ff8e9b;
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh; margin: 0; padding: 28px;
+      display: grid; place-items: center;
+      font-family: "DM Sans", system-ui, sans-serif; color: var(--text);
+      background:
+        radial-gradient(ellipse at 18% 18%, rgba(65, 139, 218, .20), transparent 38%),
+        radial-gradient(ellipse at 85% 82%, rgba(111, 102, 220, .16), transparent 36%),
+        var(--bg);
+    }
+    .layout {
+      width: min(1080px, 100%); min-height: 620px;
+      display: grid; grid-template-columns: 1.1fr .9fr; gap: 22px;
+    }
+    .intro, .auth-card {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--panel); backdrop-filter: blur(18px);
+      box-shadow: 0 24px 80px rgba(0,0,0,.28);
+    }
+    .intro {
+      padding: clamp(32px, 6vw, 68px); display: flex;
+      flex-direction: column; justify-content: space-between; overflow: hidden;
+      position: relative;
+    }
+    .intro:after {
+      content: ""; position: absolute; width: 310px; height: 310px;
+      right: -120px; bottom: -130px; border-radius: 50%;
+      border: 1px solid rgba(112,197,255,.18);
+      box-shadow: 0 0 0 35px rgba(112,197,255,.025), 0 0 0 75px rgba(112,197,255,.02);
+      pointer-events: none;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .16em; }
+    .brand-mark {
+      width: 38px; height: 38px; display: grid; place-items: center;
+      border-radius: 12px; color: #071321; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; width: fit-content;
+      color: var(--accent); background: rgba(112,197,255,.09);
+      border: 1px solid rgba(112,197,255,.16); border-radius: 999px;
+      padding: 8px 12px; font-size: 12px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 22px 0 14px; max-width: 560px; font-size: clamp(42px, 6vw, 66px); line-height: 1.02; letter-spacing: -.055em; }
+    .intro-copy { max-width: 470px; color: var(--muted); font-size: 17px; line-height: 1.75; }
+    .intro-foot { color: #71829d; font-size: 12px; }
+    .auth-card { padding: clamp(26px, 4vw, 42px); display: flex; flex-direction: column; justify-content: center; }
+    .auth-card h2 { margin: 0 0 8px; font-size: 27px; letter-spacing: -.04em; }
+    .sub { margin: 0 0 28px; color: var(--muted); line-height: 1.6; }
+    form { display: grid; gap: 11px; }
+    label { color: #c4d2e6; font-size: 13px; font-weight: 600; }
+    input[type="email"], input[type="password"] {
+      width: 100%; padding: 14px 15px; border-radius: 12px;
+      border: 1px solid var(--line); outline: none; background: #0b1322;
+      color: var(--text); font: inherit; transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus { border-color: rgba(112,197,255,.7); box-shadow: 0 0 0 3px rgba(112,197,255,.1); }
+    .remember { display: flex; align-items: center; gap: 9px; margin: 3px 0 8px; color: var(--muted); font-weight: 400; }
+    .remember input { accent-color: var(--accent); }
+    button {
+      border: 0; border-radius: 12px; padding: 13px 16px;
+      color: var(--text); font: inherit; font-weight: 700; cursor: pointer;
+      transition: transform .18s, filter .18s, background .18s;
+    }
+    button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    button:disabled { opacity: .6; cursor: wait; transform: none; }
+    .primary { color: #071321; background: linear-gradient(110deg, var(--accent), #9bb4ff); }
+    .secondary { background: #1a2940; border: 1px solid var(--line); }
+    .button-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 19px 0; color: #71829d; font-size: 12px; }
+    .divider:before, .divider:after { content: ""; height: 1px; flex: 1; background: var(--line); }
+    .message { min-height: 20px; margin: 14px 0 0; color: var(--danger); font-size: 13px; line-height: 1.5; }
+    .hint { margin: 18px 0 0; color: #71829d; font-size: 12px; line-height: 1.6; }
+    @media (max-width: 760px) {
+      body { padding: 14px; }
+      .layout { grid-template-columns: 1fr; min-height: auto; }
+      .intro { min-height: 300px; padding: 28px; }
+      h1 { font-size: 44px; }
+      .intro-foot { margin-top: 35px; }
+      .auth-card { padding: 28px; }
+    }
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <section class="hero">
-      <span class="tag">community • journals • moments</span>
-      <h1>A quiet place to share your thoughts</h1>
-      <p>Join the conversation — private, simple, sincere.</p>
+  <main class="layout">
+    <section class="intro">
+      <div class="brand"><span class="brand-mark">W</span><span>WRECKROOM</span></div>
+      <div>
+        <span class="eyebrow">A space to connect</span>
+        <h1>Your corner<br>of the internet.</h1>
+        <p class="intro-copy">A simple place to share a thought, catch up with people and be part of the conversation.</p>
+      </div>
+      <div class="intro-foot">Keep it kind. Keep it real.</div>
     </section>
 
-    <aside class="card">
-      <h2>Sign in to your account</h2>
-      <p class="lead">Enter your email or continue with Google.</p>
-
-      <form id="authForm" onsubmit="return false;">
-        <label>Email</label>
-        <input id="email" type="email" placeholder="you@example.com" required>
-        <label>Password</label>
-        <input id="password" type="password" placeholder="••••••••" required>
-        <label><input type="checkbox" id="rememberMe"> Remember me</label>
-        <label>Secret Code (optional)</label>
-        <input id="secret" type="text" placeholder="Enter secret code if you have one">
-        <div class="controls">
-          <button class="primary" id="signBtn">Sign in</button>
-          <button class="ghost" id="toggleMode" type="button">Create account</button>
-        </div>
-        <div class="controls">
-          <button id="googleBtn" class="ghost" type="button">Google</button>
-          <button id="guestBtn" class="ghost" type="button">Guest</button>
-        </div>
+    <section class="auth-card">
+      <h2 id="formTitle">Welcome back</h2>
+      <p class="sub" id="formSubtitle">Sign in and pick up where you left off.</p>
+      <form id="authForm">
+        <label for="email">Email address</label>
+        <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="Your password" autocomplete="current-password" minlength="6" required>
+        <label class="remember"><input type="checkbox" id="rememberMe" checked> Keep me signed in</label>
+        <button class="primary" id="signBtn" type="submit">Sign in</button>
+        <button class="secondary" id="toggleMode" type="button">Create an account</button>
       </form>
-    </aside>
+      <div class="divider">OR CONTINUE WITH</div>
+      <div class="button-row">
+        <button class="secondary" id="googleBtn" type="button">Continue with Google</button>
+      </div>
+      <p class="message" id="status" role="status" aria-live="polite"></p>
+      <p class="hint">By continuing, please treat other members with respect and keep personal information private.</p>
+    </section>
   </main>
 
   <script type="module">
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import {
+      getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence,
+      createUserWithEmailAndPassword, signInWithEmailAndPassword,
+      GoogleAuthProvider, signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAX0ApIVdwwav3rOyXHfJPuAfc-_ix4uFQ",
-  authDomain: "chatromm-88269.firebaseapp.com",
-  databaseURL: "https://chatromm-88269-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "chatromm-88269",
-  storageBucket: "chatromm-88269.firebasestorage.app",
-  messagingSenderId: "685497306115",
-  appId: "1:685497306115:web:e20d05c49fc9181888d236",
-  measurementId: "G-VH2FE6GGFT"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+    const firebaseConfig = {
+      apiKey: "AIzaSyAX0ApIVdwwav3rOyXHfJPuAfc-_ix4uFQ",
+      authDomain: "chatromm-88269.firebaseapp.com",
+      databaseURL: "https://chatromm-88269-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "chatromm-88269",
+      storageBucket: "chatromm-88269.firebasestorage.app",
+      messagingSenderId: "685497306115",
+      appId: "1:685497306115:web:e20d05c49fc9181888d236",
+      measurementId: "G-VH2FE6GGFT"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
-    const signBtn = document.getElementById('signBtn');
-    const toggleMode = document.getElementById('toggleMode');
-    const googleBtn = document.getElementById('googleBtn');
-    const guestBtn = document.getElementById('guestBtn');
-    const emailInput = document.getElementById('email');
-    const pwdInput = document.getElementById('password');
-    const rememberMe = document.getElementById('rememberMe');
-    const secretBox = document.getElementById('secret');
-    const SECRET_CODE = "letmein123";
+    const form = document.getElementById("authForm");
+    const signBtn = document.getElementById("signBtn");
+    const toggleMode = document.getElementById("toggleMode");
+    const googleBtn = document.getElementById("googleBtn");
+    const status = document.getElementById("status");
+    const rememberMe = document.getElementById("rememberMe");
     let creating = false;
+    let busy = false;
 
-    toggleMode.onclick = () => {
-      creating = !creating;
-      toggleMode.textContent = creating ? "Back to sign in" : "Create account";
-      signBtn.textContent = creating ? "Create account" : "Sign in";
-    };
-
-    signBtn.onclick = async () => {
-      const email = emailInput.value.trim(), pwd = pwdInput.value;
-      if (!email || !pwd) return alert("Enter email and password");
-      await setPersistence(auth, rememberMe.checked ? browserLocalPersistence : browserSessionPersistence);
-      try {
-        const userCred = creating
-          ? await createUserWithEmailAndPassword(auth, email, pwd)
-          : await signInWithEmailAndPassword(auth, email, pwd);
-        await saveUsername(userCred.user);
-      } catch (err) {
-        alert(err.message);
-      }
-    };
-
-    googleBtn.onclick = async () => {
-      await setPersistence(auth, rememberMe.checked ? browserLocalPersistence : browserSessionPersistence);
-      const userCred = await signInWithPopup(auth, provider);
-      await saveUsername(userCred.user);
-    };
-
-    guestBtn.onclick = async () => {
-      const userCred = await signInAnonymously(auth);
-      await saveUsername(userCred.user);
-    };
-
-    async function saveUsername(user) {
-      const uid = user.uid;
-      const dbRef = ref(db);
-      const snap = await get(child(dbRef, `usernames/${uid}`));
-      let username = snap.exists() ? snap.val() : localStorage.getItem(`username_${uid}`);
-      if (!username) {
-        const code = secretBox.value.trim();
-        while (true) {
-          username = prompt("Choose a username (min 5 letters):") || "";
-          if (username.length >= 5 || code === SECRET_CODE) break;
-          alert("Too short unless you have the secret code!");
-        }
-        await set(ref(db, `usernames/${uid}`), username);
-        localStorage.setItem(`username_${uid}`, username);
-      }
-      setTimeout(() => (window.location.href = "chatroom.html"), 500);
+    function showError(error) {
+      const messages = {
+        "auth/invalid-credential": "Email or password is incorrect.",
+        "auth/email-already-in-use": "An account with this email already exists.",
+        "auth/weak-password": "Choose a password with at least 6 characters.",
+        "auth/popup-closed-by-user": "The Google sign-in window was closed."
+      };
+      status.textContent = messages[error.code] || error.message || "Something went wrong. Please try again.";
     }
+
+    async function setUserName(user) {
+      const usernameRef = ref(db, `usernames/${user.uid}`);
+      const snapshot = await get(usernameRef);
+      if (snapshot.exists()) return snapshot.val();
+
+      let username = user.displayName?.trim();
+      while (!username || username.length < 3 || username.length > 20) {
+        username = prompt("Choose a username (3–20 characters):");
+        if (username === null) {
+          await auth.signOut();
+          return null;
+        }
+        username = username.trim();
+      }
+      await set(usernameRef, username);
+      return username;
+    }
+
+    async function finishSignIn(user) {
+      const username = await setUserName(user);
+      if (username) window.location.href = "chatroom.html";
+    }
+
+    async function runAuth(action) {
+      if (busy) return;
+      busy = true;
+      status.textContent = "";
+      [signBtn, toggleMode, googleBtn].forEach(button => button.disabled = true);
+      try {
+        await action();
+      } catch (error) {
+        showError(error);
+      } finally {
+        busy = false;
+        [signBtn, toggleMode, googleBtn].forEach(button => button.disabled = false);
+      }
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      runAuth(async () => {
+        await setPersistence(auth, rememberMe.checked ? browserLocalPersistence : browserSessionPersistence);
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const credential = creating
+          ? await createUserWithEmailAndPassword(auth, email, password)
+          : await signInWithEmailAndPassword(auth, email, password);
+        await finishSignIn(credential.user);
+      });
+    });
+
+    toggleMode.addEventListener("click", () => {
+      creating = !creating;
+      document.getElementById("formTitle").textContent = creating ? "Create your account" : "Welcome back";
+      document.getElementById("formSubtitle").textContent = creating ? "Join the Wreckroom community." : "Sign in and pick up where you left off.";
+      document.getElementById("password").autocomplete = creating ? "new-password" : "current-password";
+      signBtn.textContent = creating ? "Create account" : "Sign in";
+      toggleMode.textContent = creating ? "Back to sign in" : "Create an account";
+      status.textContent = "";
+    });
+
+    googleBtn.addEventListener("click", () => runAuth(async () => {
+      await setPersistence(auth, rememberMe.checked ? browserLocalPersistence : browserSessionPersistence);
+      const credential = await signInWithPopup(auth, provider);
+      await finishSignIn(credential.user);
+    }));
+
   </script>
 </body>
 </html>

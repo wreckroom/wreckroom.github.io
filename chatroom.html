@@ -1,166 +1,317 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>YSA Chatroom</title>
-<style>
-:root{--turf-blue:#3B9AE1;--white:#fff;--dark:#0f172a;--light-dark:#1e293b;}
-body{margin:0;font-family:Arial,sans-serif;background-color:var(--dark);color:var(--white);height:100vh;display:grid;grid-template-rows:60px 1fr;grid-template-columns:200px 1fr 250px;grid-template-areas:"topbar topbar topbar""sidebar chat friends";}
-.topbar{grid-area:topbar;background-color:var(--turf-blue);display:flex;align-items:center;justify-content:space-between;padding:0 20px;color:var(--white);}
-.topbar .logo{font-size:1.4em;font-weight:bold;}
-.sidebar{grid-area:sidebar;background-color:var(--light-dark);display:flex;flex-direction:column;align-items:center;padding-top:20px;border-right:2px solid var(--turf-blue);}
-.sidebar button{width:80%;margin:10px 0;padding:10px;background-color:var(--turf-blue);border:none;border-radius:8px;color:var(--white);cursor:pointer;font-weight:bold;}
-.sidebar button:hover{background-color:#3587c5;}
-.chat{grid-area:chat;display:flex;flex-direction:column;align-items:center;padding:10px;background-color:var(--dark);}
-.chat-box{width:90%;max-width:600px;flex:1;overflow-y:auto;border-radius:10px;background:var(--light-dark);padding:10px;border:2px solid var(--turf-blue);}
-.message{background-color:#22314b;border-radius:10px;padding:8px 12px;margin:8px 0;display:flex;gap:10px;}
-.message img.pfp{width:35px;height:35px;border-radius:50%;}
-.msg-content{flex:1;}
-.msg-content img{max-width:100%;border-radius:8px;margin-top:5px;}
-.input-area{width:90%;max-width:600px;display:flex;gap:5px;margin-top:10px;}
-.input-area input[type="text"]{flex:1;padding:10px;border:none;border-radius:8px;}
-.input-area button{background:var(--turf-blue);border:none;color:var(--white);border-radius:8px;padding:10px 15px;cursor:pointer;}
-.input-area button:hover{background:#3587c5;}
-.friends{grid-area:friends;background-color:var(--light-dark);border-left:2px solid var(--turf-blue);padding:20px;display:flex;flex-direction:column;}
-.friends h3{margin:0 0 10px;color:var(--turf-blue);text-align:center;}
-.friend-list{flex:1;overflow-y:auto;}
-.friend{display:flex;align-items:center;gap:10px;margin:5px 0;}
-.friend .status{width:10px;height:10px;background:#00ff55;border-radius:50%;}
-.trends{border-top:1px solid var(--turf-blue);margin-top:10px;padding-top:10px;}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090d18">
+  <meta name="description" content="Wreckroom community chat.">
+  <title>Wreckroom — Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark; --bg:#090d18; --panel:#111b2d; --panel-2:#15223a;
+      --line:rgba(160,190,230,.13); --text:#edf4ff; --muted:#9aaac2;
+      --accent:#70c5ff; --accent-2:#8c9dff; --good:#61dda2;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; min-height:100vh; font-family:"DM Sans",system-ui,sans-serif;
+      color:var(--text); background:
+        radial-gradient(ellipse at 12% 0%,rgba(65,139,218,.15),transparent 38%),var(--bg);
+      display:grid; grid-template-rows:72px 1fr;
+    }
+    .topbar {
+      display:flex; align-items:center; justify-content:space-between; gap:16px;
+      padding:0 28px; border-bottom:1px solid var(--line);
+      background:rgba(9,13,24,.82); backdrop-filter:blur(16px);
+      position:sticky; top:0; z-index:2;
+    }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:800; letter-spacing:.15em; }
+    .brand-mark {
+      width:34px;height:34px;display:grid;place-items:center;border-radius:11px;
+      color:#071321;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    }
+    .top-actions { display:flex;align-items:center;gap:14px;color:var(--muted);font-size:13px; }
+    button {
+      border:1px solid var(--line); border-radius:11px; padding:10px 14px;
+      background:#1a2940; color:var(--text); font:inherit; font-weight:700; cursor:pointer;
+      transition:filter .18s,transform .18s;
+    }
+    button:hover { filter:brightness(1.12);transform:translateY(-1px); }
+    button:disabled { opacity:.55;cursor:wait;transform:none; }
+    .shell {
+      width:min(1440px,100%); margin:0 auto; padding:22px;
+      display:grid; grid-template-columns:210px minmax(0,1fr) 245px; gap:18px;
+      min-height:0; width:100%;
+    }
+    .panel {
+      background:rgba(17,27,45,.88); border:1px solid var(--line);
+      border-radius:18px; min-height:0;
+    }
+    .sidebar { padding:20px 14px; }
+    .side-label { margin:0 10px 13px;color:#71829d;font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase; }
+    .nav-item { display:block;width:100%;margin:5px 0;text-align:left;background:transparent;color:var(--muted); }
+    .nav-item.active { color:var(--text);background:rgba(112,197,255,.1);border-color:rgba(112,197,255,.2); }
+    .side-note { margin:24px 10px 0;color:#71829d;font-size:12px;line-height:1.6; }
+    .chat-panel { display:flex;flex-direction:column;overflow:hidden; }
+    .chat-heading { padding:19px 22px;border-bottom:1px solid var(--line); }
+    .chat-heading h1 { margin:0;font-size:19px;letter-spacing:-.03em; }
+    .chat-heading p { margin:5px 0 0;color:var(--muted);font-size:12px; }
+    .chat-box { flex:1;min-height:260px;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px; }
+    .message { display:flex;gap:11px;align-items:flex-start;max-width:820px; }
+    .avatar {
+      flex:0 0 36px;width:36px;height:36px;border-radius:12px;
+      display:grid;place-items:center;background:linear-gradient(135deg,#24476b,#333d72);
+      color:#dceeff;font-size:12px;font-weight:800;overflow:hidden;
+    }
+    .avatar img { width:100%;height:100%;object-fit:cover; }
+    .bubble { min-width:0;padding:10px 13px;border:1px solid var(--line);border-radius:4px 14px 14px 14px;background:#17253d; }
+    .message-meta { display:flex;align-items:center;gap:9px;margin-bottom:4px; }
+    .message-name { color:var(--accent);font-size:12px;font-weight:800; }
+    .message-time { color:#71829d;font-size:10px; }
+    .message-text { color:#e4edf9;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere; }
+    .empty { margin:auto;color:#71829d;text-align:center;font-size:13px; }
+    .composer { padding:14px;border-top:1px solid var(--line); }
+    .composer-row { display:flex;align-items:center;gap:9px; }
+    .composer input[type="text"] {
+      min-width:0;flex:1;padding:13px 14px;border-radius:12px;border:1px solid var(--line);
+      outline:none;background:#0b1322;color:var(--text);font:inherit;
+    }
+    .composer input:focus { border-color:rgba(112,197,255,.65); }
+    .send { color:#071321;background:linear-gradient(110deg,var(--accent),#9bb4ff);border:0;padding:12px 19px; }
+    .composer-hint { min-height:15px;margin:7px 3px 0;color:#71829d;font-size:11px; }
+    .right-panel { padding:20px 16px;display:flex;flex-direction:column; }
+    .right-panel h2 { margin:0 0 5px;font-size:15px; }
+    .right-sub { margin:0 0 17px;color:var(--muted);font-size:12px; }
+    .friend-list { display:flex;flex-direction:column;gap:12px;overflow:auto; }
+    .friend { display:flex;align-items:center;gap:9px;min-width:0;font-size:13px; }
+    .friend-dot { width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:var(--good);box-shadow:0 0 10px rgba(97,221,162,.3); }
+    .friend-name { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .online-count { margin-left:auto;color:var(--muted);font-size:11px; }
+    .right-foot { margin-top:auto;padding-top:20px;color:#71829d;font-size:11px;line-height:1.6; }
+    @media(max-width:980px) {
+      .shell { grid-template-columns:170px minmax(0,1fr); }
+      .right-panel { grid-column:1/-1;min-height:120px; }
+      .friend-list { flex-direction:row;flex-wrap:wrap; }
+      .right-foot { display:none; }
+    }
+    @media(max-width:650px) {
+      body { grid-template-rows:62px 1fr; }
+      .topbar { padding:0 15px; }
+      .top-actions span { display:none; }
+      .shell { display:flex;flex-direction:column;padding:12px;gap:12px; }
+      .sidebar { display:none; }
+      .chat-panel { min-height:62vh; }
+      .chat-box { padding:14px; }
+      .right-panel { min-height:100px; }
+      .composer { padding:10px; }
+      .send { padding:12px; }
+    }
+  </style>
 </head>
 <body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">W</span><span>WRECKROOM</span></div>
+    <div class="top-actions"><span id="currentUser">Connecting…</span><button id="logoutBtn" type="button">Sign out</button></div>
+  </header>
 
-<div class="topbar"><div class="logo">YSA</div></div>
+  <main class="shell">
+    <aside class="panel sidebar">
+      <p class="side-label">Workspace</p>
+      <button class="nav-item active" type="button"># Community chat</button>
+      <p class="side-note">A place to talk, share ideas and catch up. Keep the conversation respectful.</p>
+    </aside>
 
-<div class="sidebar">
-  <button>News</button>
-  <button>Likes</button>
-  <button>Saves</button>
-</div>
+    <section class="panel chat-panel">
+      <div class="chat-heading">
+        <h1>Community chat</h1>
+        <p>Say hello to everyone in the room.</p>
+      </div>
+      <div class="chat-box" id="chatBox" aria-live="polite">
+        <p class="empty" id="emptyState">Loading the conversation…</p>
+      </div>
+      <form class="composer" id="messageForm">
+        <div class="composer-row">
+          <input type="text" id="msgInput" maxlength="1000" placeholder="Write a message…" autocomplete="off" aria-label="Message">
+          <button class="send" id="sendBtn" type="submit">Send</button>
+        </div>
+        <p class="composer-hint" id="composerHint" role="status" aria-live="polite">Be kind to each other.</p>
+      </form>
+    </section>
 
-<div class="chat">
-  <div class="chat-box" id="chatBox"></div>
-  <div class="input-area">
-    <input type="text" id="msgInput" placeholder="Type a message...">
-    <input type="file" id="imgInput" accept="image/*">
-    <button id="sendBtn">Send</button>
-  </div>
-</div>
+    <aside class="panel right-panel">
+      <h2>People online</h2>
+      <p class="right-sub"><span id="onlineCount">0</span> members connected</p>
+      <div class="friend-list" id="friendList"></div>
+      <p class="right-foot">Wreckroom is better when everyone feels welcome. Don't share private information in public chats.</p>
+    </aside>
+  </main>
 
-<div class="friends">
-  <h3>Friends Online</h3>
-  <div class="friend-list" id="friendList"></div>
-  <div class="trends"><h3>Trends</h3><p>— Coming soon —</p></div>
-</div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import {
+      getDatabase, ref, get, child, push, set, onChildAdded, onValue,
+      onDisconnect, remove, serverTimestamp, query, limitToLast
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getDatabase, ref, onChildAdded, push, set, remove, serverTimestamp, onValue, get, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyAX0ApIVdwwav3rOyXHfJPuAfc-_ix4uFQ",
+      authDomain: "chatromm-88269.firebaseapp.com",
+      databaseURL: "https://chatromm-88269-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "chatromm-88269",
+      storageBucket: "chatromm-88269.firebasestorage.app",
+      messagingSenderId: "685497306115",
+      appId: "1:685497306115:web:e20d05c49fc9181888d236",
+      measurementId: "G-VH2FE6GGFT"
+    };
 
-  apiKey: "AIzaSyAX0ApIVdwwav3rOyXHfJPuAfc-_ix4uFQ",
-  authDomain: "chatromm-88269.firebaseapp.com",
-  databaseURL: "https://chatromm-88269-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "chatromm-88269",
-  storageBucket: "chatromm-88269.firebasestorage.app",
-  messagingSenderId: "685497306115",
-  appId: "1:685497306115:web:8535803db39fd35e88d236",
-  measurementId: "G-688SLD2C2Y"
-};
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-const storage = getStorage(app);
+    const chatBox = document.getElementById("chatBox");
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const friendList = document.getElementById("friendList");
+    const composerHint = document.getElementById("composerHint");
+    let uid = null;
+    let username = "Member";
+    let ready = false;
 
-const chatBox = document.getElementById("chatBox");
-const msgInput = document.getElementById("msgInput");
-const imgInput = document.getElementById("imgInput");
-const sendBtn = document.getElementById("sendBtn");
-const friendList = document.getElementById("friendList");
+    function addMessage(message, key) {
+      const empty = document.getElementById("emptyState");
+      if (empty) empty.remove();
 
-let uid, username, profileURL = "https://via.placeholder.com/40";
+      const row = document.createElement("article");
+      row.className = "message";
+      row.dataset.messageId = key;
 
-onAuthStateChanged(auth, async user => {
-  if (!user) return window.location.href = "index.html";
-  uid = user.uid;
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      const photo = typeof message.photoURL === "string" && message.photoURL.startsWith("https://")
+        ? message.photoURL : "";
+      if (photo) {
+        const image = document.createElement("img");
+        image.src = photo;
+        image.alt = "";
+        image.referrerPolicy = "no-referrer";
+        avatar.appendChild(image);
+      } else {
+        avatar.textContent = (message.name || "M").trim().slice(0, 1).toUpperCase();
+      }
 
-  // Get locked username from Firebase or localStorage
-  const dbRef = ref(db);
-  const snap = await get(child(dbRef, `usernames/${uid}`));
-  if (snap.exists()) username = snap.val();
-  else {
-    alert("Username not found. Please login again.");
-    auth.signOut();
-    return window.location.href = "index.html";
-  }
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      const meta = document.createElement("div");
+      meta.className = "message-meta";
+      const name = document.createElement("span");
+      name.className = "message-name";
+      name.textContent = String(message.name || "Member").slice(0, 30);
+      const time = document.createElement("span");
+      time.className = "message-time";
+      if (typeof message.timestamp === "number") {
+        time.textContent = new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+      meta.append(name, time);
 
-  // Set online
-  const userRef = ref(db, `onlineUsers/${uid}`);
-  set(userRef, { name: username, online:true });
-  window.addEventListener("beforeunload", () => remove(userRef));
+      const text = document.createElement("div");
+      text.className = "message-text";
+      text.textContent = String(message.text || "").slice(0, 1000);
+      bubble.append(meta);
+      if (text.textContent) bubble.append(text);
 
-  // Load existing chat
-  const chatRef = ref(db, "messages");
-  onChildAdded(chatRef, snap => {
-    const msg = snap.val();
-    const div = document.createElement("div");
-    div.className = "message";
-    div.innerHTML = `<img src="${msg.photoURL||profileURL}" class="pfp">
-      <div class="msg-content"><b style="color:var(--turf-blue)">${msg.name}</b><br>${msg.text||""}</div>`;
-    if (msg.imageURL){
-      const img = document.createElement("img"); img.src = msg.imageURL;
-      div.querySelector(".msg-content").appendChild(img);
+
+      row.append(avatar, bubble);
+      chatBox.append(row);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  });
 
-  // Show friends online
-  const usersRef = ref(db, "onlineUsers");
-  onValue(usersRef, snapshot => {
-    friendList.innerHTML = "";
-    snapshot.forEach(snap => {
-      const u = snap.val();
-      if (u.online){
-        const div = document.createElement("div");
-        div.className = "friend";
-        div.innerHTML = `<div class="status"></div><span>${u.name}</span>`;
-        friendList.appendChild(div);
+    function showOnline(snapshot) {
+      friendList.replaceChildren();
+      let count = 0;
+      snapshot.forEach(childSnapshot => {
+        const person = childSnapshot.val();
+        if (!person || person.online !== true) return;
+        count += 1;
+        const row = document.createElement("div");
+        row.className = "friend";
+        const dot = document.createElement("span");
+        dot.className = "friend-dot";
+        const name = document.createElement("span");
+        name.className = "friend-name";
+        name.textContent = String(person.name || "Member").slice(0, 30);
+        row.append(dot, name);
+        friendList.append(row);
+      });
+      document.getElementById("onlineCount").textContent = String(count);
+    }
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        window.location.replace("index.html");
+        return;
+      }
+      try {
+        uid = user.uid;
+        const usernameSnapshot = await get(child(ref(db), `usernames/${uid}`));
+        if (!usernameSnapshot.exists()) {
+          await signOut(auth);
+          window.location.replace("index.html");
+          return;
+        }
+        username = String(usernameSnapshot.val()).slice(0, 30) || "Member";
+        document.getElementById("currentUser").textContent = username;
+
+        const userStatusRef = ref(db, `onlineUsers/${uid}`);
+        await onDisconnect(userStatusRef).remove();
+        await set(userStatusRef, { name: username, online: true });
+
+        onChildAdded(query(ref(db, "messages"), limitToLast(100)), snapshot => {
+          const message = snapshot.val();
+          if (message) addMessage(message, snapshot.key);
+        });
+        onValue(ref(db, "onlineUsers"), showOnline);
+        ready = true;
+        msgInput.focus();
+      } catch (error) {
+        composerHint.textContent = error.message || "Could not connect to the chat. Please refresh.";
       }
     });
-  });
-});
 
-sendBtn.onclick = sendMessage;
-msgInput.addEventListener("keydown", e=>{if(e.key==="Enter") sendMessage()});
+    document.getElementById("messageForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!ready || !uid || sendBtn.disabled) return;
+      const text = msgInput.value.trim();
+      if (!text) return;
 
-async function sendMessage(){
-  const text = msgInput.value.trim();
-  const file = imgInput.files[0];
-  if (!text && !file) return;
+      sendBtn.disabled = true;
+      composerHint.textContent = "Sending…";
+      try {
+        await push(ref(db, "messages"), {
+          uid, name: username, photoURL: auth.currentUser?.photoURL || "",
+          text: text.slice(0, 1000), timestamp: serverTimestamp()
+        });
+        msgInput.value = "";
+        composerHint.textContent = "Message sent.";
+      } catch (error) {
+        composerHint.textContent = error.message || "Message could not be sent.";
+      } finally {
+        sendBtn.disabled = false;
+        msgInput.focus();
+      }
+    });
 
-  let imageURL=null;
-  if(file){
-    const storageRef = sRef(storage, `images/${uid}-${Date.now()}-${file.name}`);
-    await uploadBytes(storageRef,file);
-    imageURL = await getDownloadURL(storageRef);
-  }
-
-  await push(ref(db,"messages"),{
-    uid,
-    name: username,
-    photoURL: profileURL,
-    text: text||"",
-    imageURL,
-    timestamp: serverTimestamp()
-  });
-
-  msgInput.value=""; imgInput.value="";
-}
-</script>
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        if (uid) await remove(ref(db, `onlineUsers/${uid}`));
+        await signOut(auth);
+      } catch (error) {
+        composerHint.textContent = error.message || "Could not sign out.";
+      }
+    });
+  </script>
 </body>
 </html>
