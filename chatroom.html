@@ -278,6 +278,19 @@
           return;
         }
         username = String(usernameSnapshot.val()).slice(0, 30) || "Member";
+        const moderationSnapshot = await get(child(ref(db), `moderation/${uid}`));
+        const moderationState = moderationSnapshot.val();
+        const blockedUntil = Number(moderationState?.timeoutUntil || 0);
+        if (moderationState?.status === "banned" || (moderationState?.status === "timeout" && blockedUntil > Date.now())) {
+          msgInput.disabled = true;
+          sendBtn.disabled = true;
+          const reason = moderationState.reason ? ` Grund: ${String(moderationState.reason).slice(0,240)}` : "";
+          const expiry = moderationState.status === "banned" ? "Dein Zugang zum Chat wurde dauerhaft gesperrt." : `Du bist bis ${new Date(blockedUntil).toLocaleString("de-DE")} vom Schreiben ausgeschlossen.`;
+          composerHint.textContent = expiry + reason;
+          document.getElementById("emptyState").textContent = "Chat derzeit nicht verfügbar.";
+          document.getElementById("currentUser").textContent = username;
+          return;
+        }
         const currentUserLabel = document.getElementById("currentUser");
         currentUserLabel.textContent = username;
         if (uid === ADMIN_UID) {
