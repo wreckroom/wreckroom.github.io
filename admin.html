@@ -90,7 +90,7 @@
   <script type="module">
     import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import {getAuth,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import {getDatabase,ref,get,onValue,remove,set} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import {getDatabase,ref,get,onValue,remove,set,runTransaction} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
     const firebaseConfig={
       apiKey:"AIzaSyAX0ApIVdwwav3rOyXHfJPuAfc-_ix4uFQ",
       authDomain:"chatromm-88269.firebaseapp.com",
@@ -122,7 +122,7 @@
       const rows=ids.filter(id=>(userName(id)+" "+id).toLowerCase().includes(term)).sort((a,b)=>userName(a).localeCompare(userName(b))).map(id=>{
         const isOnline=online[id]?.online===true;
         const state=moderationLabel(moderation[id]);
-        return '<tr><td><strong>'+esc(userName(id))+'</strong>'+(id===ADMIN_UID?' <span class="admin-tag">ADMIN</span>':'')+'</td><td><span class="pill '+(isOnline?'':'offline')+'"><span class="dot"></span>'+(isOnline?'Online':'Offline')+'</span></td><td>'+esc(state)+'</td><td><code>'+esc(id.slice(0,9))+'…</code></td><td>'+(id===ADMIN_UID?'—':'<button data-moderate="'+esc(id)+'">Verwalten</button>')+'</td></tr>';
+        return '<tr><td><strong>'+esc(userName(id))+'</strong>'+(id===ADMIN_UID?' <span class="admin-tag">ADMIN</span>':'')+'</td><td><span class="pill '+(isOnline?'':'offline')+'"><span class="dot"></span>'+(isOnline?'Online':'Offline')+'</span></td><td>'+esc(state)+'</td><td><code>'+esc(id.slice(0,9))+'…</code></td><td><div class="mod-actions"><button data-rename="'+esc(id)+'">Name ändern</button>'+(id===ADMIN_UID?'':'<button data-moderate="'+esc(id)+'">Verwalten</button>')+'</div></td></tr>';
       });
       $("usersTable").innerHTML=table(["Nutzername","Online","Moderation","UID","Aktion"],rows);
     }
@@ -166,6 +166,42 @@
       });
       if(expired)renderModeration();
     }
+    async function renameUser(uid) {
+      if (!uid) return;
+      const currentName = userName(uid);
+      const proposed = prompt("Neuer Nutzername (5–20 Zeichen):", currentName);
+      if (proposed === null) return;
+      const newName = proposed.trim();
+      if (newName.length < 5 || newName.length > 20) {
+        alert("Der Name muss mindestens 5 und höchstens 20 Zeichen haben.");
+        return;
+      }
+
+      const claimKey = name => encodeURIComponent(name.trim().toLowerCase());
+      const newClaimRef = ref(db, "usernameClaims/" + claimKey(newName));
+      try {
+        const claim = await runTransaction(newClaimRef, current => {
+          if (current === null || current === uid) return uid;
+          return;
+        }, { applyLocally: false });
+        if (!claim.committed) {
+          alert("Dieser Nutzername ist bereits vergeben (Groß-/Kleinschreibung wird ignoriert).");
+          return;
+        }
+
+        await set(ref(db, "usernames/" + uid), newName);
+        if (online[uid]) await set(ref(db, "onlineUsers/" + uid + "/name"), newName);
+
+        const oldName = currentName;
+        if (oldName && claimKey(oldName) !== claimKey(newName)) {
+          const oldClaimRef = ref(db, "usernameClaims/" + claimKey(oldName));
+          await runTransaction(oldClaimRef, current => current === uid ? null : undefined, { applyLocally: false });
+        }
+      } catch (error) {
+        alert("Name konnte nicht geändert werden: " + error.message);
+      }
+    }
+
     function openModeration(id){
       if(!id||id===ADMIN_UID)return;
       selectedUid=id;
@@ -207,6 +243,7 @@
     $("userSearch").addEventListener("input",renderUsers);
     $("messageSearch").addEventListener("input",()=>renderMessages("messagesTable",500,$("messageSearch").value.trim()));
     document.addEventListener("click",event=>{
+      const rename=event.target.closest("[data-rename]");if(rename){renameUser(rename.dataset.rename);return;}
       const manage=event.target.closest("[data-moderate]");if(manage){openModeration(manage.dataset.moderate);return;}
       const unban=event.target.closest("[data-unmoderate]");if(unban)clearModeration(unban.dataset.unmoderate);
     });
