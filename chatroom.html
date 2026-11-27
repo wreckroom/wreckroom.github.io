@@ -70,6 +70,9 @@
     .bubble { min-width:0;padding:10px 13px;border:1px solid var(--line);border-radius:4px 14px 14px 14px;background:#17253d; }
     .message-meta { display:flex;align-items:center;gap:9px;margin-bottom:4px; }
     .message-name { color:var(--accent);font-size:12px;font-weight:800; }
+    .message-name.admin-name, #currentUser.admin-name, .friend-name.admin-name {
+      color:#ff4d5e !important;font-weight:800;text-shadow:0 0 12px rgba(255,77,94,.22);
+    }
     .message-time { color:#71829d;font-size:10px; }
     .message-text { color:#e4edf9;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere; }
     .empty { margin:auto;color:#71829d;text-align:center;font-size:13px; }
@@ -177,6 +180,7 @@
     const sendBtn = document.getElementById("sendBtn");
     const friendList = document.getElementById("friendList");
     const composerHint = document.getElementById("composerHint");
+    const ADMIN_UID = "OiXzubR4UFUc3maV2WATBUc1IW32";
     let uid = null;
     let username = "Member";
     let ready = false;
@@ -210,6 +214,7 @@
       const name = document.createElement("span");
       name.className = "message-name";
       name.textContent = String(message.name || "Member").slice(0, 30);
+      if (message.uid === ADMIN_UID) name.classList.add("admin-name");
       const time = document.createElement("span");
       time.className = "message-time";
       if (typeof message.timestamp === "number") {
@@ -243,6 +248,7 @@
         const name = document.createElement("span");
         name.className = "friend-name";
         name.textContent = String(person.name || "Member").slice(0, 30);
+        if (childSnapshot.key === ADMIN_UID) name.classList.add("admin-name");
         row.append(dot, name);
         friendList.append(row);
       });
@@ -263,7 +269,9 @@
           return;
         }
         username = String(usernameSnapshot.val()).slice(0, 30) || "Member";
-        document.getElementById("currentUser").textContent = username;
+        const currentUserLabel = document.getElementById("currentUser");
+        currentUserLabel.textContent = username;
+        if (uid === ADMIN_UID) currentUserLabel.classList.add("admin-name");
 
         const userStatusRef = ref(db, `onlineUsers/${uid}`);
         await onDisconnect(userStatusRef).remove();
