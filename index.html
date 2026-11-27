@@ -92,7 +92,7 @@
     button:disabled { opacity: .6; cursor: wait; transform: none; }
     .primary { color: #071321; background: linear-gradient(110deg, var(--accent), #9bb4ff); }
     .secondary { background: #1a2940; border: 1px solid var(--line); }
-    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .button-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
     .divider { display: flex; align-items: center; gap: 12px; margin: 19px 0; color: #71829d; font-size: 12px; }
     .divider:before, .divider:after { content: ""; height: 1px; flex: 1; background: var(--line); }
     .message { min-height: 20px; margin: 14px 0 0; color: var(--danger); font-size: 13px; line-height: 1.5; }
@@ -133,8 +133,7 @@
       </form>
       <div class="divider">OR CONTINUE WITH</div>
       <div class="button-row">
-        <button class="secondary" id="googleBtn" type="button">Google</button>
-        <button class="secondary" id="guestBtn" type="button">Guest</button>
+        <button class="secondary" id="googleBtn" type="button">Continue with Google</button>
       </div>
       <p class="message" id="status" role="status" aria-live="polite"></p>
       <p class="hint">By continuing, please treat other members with respect and keep personal information private.</p>
@@ -146,7 +145,7 @@
     import {
       getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence,
       createUserWithEmailAndPassword, signInWithEmailAndPassword,
-      GoogleAuthProvider, signInWithPopup, signInAnonymously
+      GoogleAuthProvider, signInWithPopup
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
     import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
@@ -170,7 +169,6 @@
     const signBtn = document.getElementById("signBtn");
     const toggleMode = document.getElementById("toggleMode");
     const googleBtn = document.getElementById("googleBtn");
-    const guestBtn = document.getElementById("guestBtn");
     const status = document.getElementById("status");
     const rememberMe = document.getElementById("rememberMe");
     let creating = false;
@@ -213,14 +211,14 @@
       if (busy) return;
       busy = true;
       status.textContent = "";
-      [signBtn, toggleMode, googleBtn, guestBtn].forEach(button => button.disabled = true);
+      [signBtn, toggleMode, googleBtn].forEach(button => button.disabled = true);
       try {
         await action();
       } catch (error) {
         showError(error);
       } finally {
         busy = false;
-        [signBtn, toggleMode, googleBtn, guestBtn].forEach(button => button.disabled = false);
+        [signBtn, toggleMode, googleBtn].forEach(button => button.disabled = false);
       }
     }
 
@@ -253,10 +251,6 @@
       await finishSignIn(credential.user);
     }));
 
-    guestBtn.addEventListener("click", () => runAuth(async () => {
-      const credential = await signInAnonymously(auth);
-      await finishSignIn(credential.user);
-    }));
   </script>
 </body>
 </html>
