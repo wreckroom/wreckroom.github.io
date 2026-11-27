@@ -190,7 +190,9 @@
         }
 
         await set(ref(db, "usernames/" + uid), newName);
-        if (online[uid]) await set(ref(db, "onlineUsers/" + uid + "/name"), newName);
+        if (online[uid]) {
+          try { await set(ref(db, "onlineUsers/" + uid + "/name"), newName); } catch (_) { /* Presence refreshes on the user's next connection. */ }
+        }
 
         const oldName = currentName;
         if (oldName && claimKey(oldName) !== claimKey(newName)) {
