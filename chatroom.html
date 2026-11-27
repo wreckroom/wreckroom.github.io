@@ -321,6 +321,20 @@
         await onDisconnect(userStatusRef).remove();
         await set(userStatusRef, { name: username, online: true });
 
+        onValue(ref(db, `usernames/${uid}`), snapshot => {
+          if (!snapshot.exists()) return;
+          username = String(snapshot.val()).slice(0, 30) || "Member";
+          currentUserLabel.textContent = username;
+          if (uid === ADMIN_UID) {
+            currentUserLabel.classList.add("admin-name");
+            const badge = document.createElement("span");
+            badge.className = "admin-badge";
+            badge.textContent = "ADMIN";
+            currentUserLabel.appendChild(badge);
+          }
+          set(ref(db, `onlineUsers/${uid}/name`), username).catch(() => {});
+        });
+
         onChildAdded(query(ref(db, "messages"), limitToLast(100)), snapshot => {
           const message = snapshot.val();
           if (message) addMessage(message, snapshot.key);
