@@ -214,7 +214,7 @@
 
       while (true) {
         const valid = username.length >= 5 && username.length <= 20 &&
-          /^[A-Za-z0-9_]+$/.test(username) &&
+          /^[A-Za-z0-9_]+$/.test(username) && /[A-Za-z0-9]/.test(username) &&
           (isAdmin || !isReservedUsername(username));
         if (!valid) {
           username = prompt("Choose a username (5–20 characters; letters, numbers and _ only). Reserved names such as admin, dev and moderator are not allowed:", username);
