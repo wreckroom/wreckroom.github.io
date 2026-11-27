@@ -172,8 +172,8 @@
       const proposed = prompt("Neuer Nutzername (5–20 Zeichen):", currentName);
       if (proposed === null) return;
       const newName = proposed.trim();
-      if (newName.length < 5 || newName.length > 20) {
-        alert("Der Name muss mindestens 5 und höchstens 20 Zeichen haben.");
+      if (newName.length < 5 || newName.length > 20 || !/^[A-Za-z0-9_]+$/.test(newName)) {
+        alert("Der Name muss 5–20 Zeichen haben und darf nur Buchstaben, Zahlen und Unterstriche enthalten.");
         return;
       }
 
