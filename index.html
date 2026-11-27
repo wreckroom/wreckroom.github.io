@@ -147,7 +147,7 @@
       createUserWithEmailAndPassword, signInWithEmailAndPassword,
       GoogleAuthProvider, signInWithPopup
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import { getDatabase, ref, get, set, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAX0ApIVdwwav3rOyXHfJPuAfc-_ix4uFQ",
@@ -191,28 +191,58 @@
       return RESERVED_USERNAMES.has(value.trim().toLowerCase());
     }
 
+    function usernameClaimKey(name) {
+      return encodeURIComponent(name.trim().toLowerCase());
+    }
+
+    async function claimUsername(name, uid) {
+      const claimRef = ref(db, `usernameClaims/${usernameClaimKey(name)}`);
+      const result = await runTransaction(claimRef, current => {
+        if (current === null || current === uid) return uid;
+        return;
+      }, { applyLocally: false });
+      return result.committed;
+    }
+
     async function setUserName(user) {
       const usernameRef = ref(db, `usernames/${user.uid}`);
       const snapshot = await get(usernameRef);
-      if (snapshot.exists()) return snapshot.val();
+      const isAdmin = user.uid === ADMIN_UID;
+      let username = snapshot.exists()
+        ? String(snapshot.val()).trim()
+        : (user.displayName?.trim() || "");
 
-      let username = user.uid === ADMIN_UID ? (user.displayName?.trim() || "Admin") : user.displayName?.trim();
-      while (
-        !username || username.length < 3 || username.length > 20 ||
-        (user.uid !== ADMIN_UID && isReservedUsername(username))
-      ) {
-        username = prompt("Choose a username (3–20 characters). Reserved names such as admin, dev and moderator are not allowed:");
+      while (true) {
+        const valid = username.length >= 5 && username.length <= 20 &&
+          (isAdmin || !isReservedUsername(username));
+        if (!valid) {
+          username = prompt("Choose a username (5–20 characters). Reserved names such as admin, dev and moderator are not allowed:", username);
+          if (username === null) {
+            await auth.signOut();
+            return null;
+          }
+          username = username.trim();
+          continue;
+        }
+
+        if (await claimUsername(username, user.uid)) {
+          try {
+            await set(usernameRef, username);
+            return username;
+          } catch (error) {
+            const claimRef = ref(db, `usernameClaims/${usernameClaimKey(username)}`);
+            await runTransaction(claimRef, current => current === user.uid ? null : undefined);
+            throw error;
+          }
+        }
+
+        username = prompt("This username is already taken. Please choose a different one (5–20 characters):", username);
         if (username === null) {
           await auth.signOut();
           return null;
         }
         username = username.trim();
-        if (isReservedUsername(username)) {
-          alert("This username is reserved. Please choose another one.");
-        }
       }
-      await set(usernameRef, username);
-      return username;
     }
 
     async function finishSignIn(user) {
