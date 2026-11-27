@@ -104,7 +104,26 @@
     .friend-name { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
     .online-count { margin-left:auto;color:var(--muted);font-size:11px; }
     .right-foot { margin-top:auto;padding-top:20px;color:#71829d;font-size:11px;line-height:1.6; }
-    @media(max-width:980px) {
+
+    .profile-trigger { border:0;background:transparent;padding:0;color:var(--accent);font:inherit;font-weight:800;cursor:pointer;text-align:left; }
+    .profile-trigger:hover { text-decoration:underline;transform:none; }
+    .profile-modal { position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,7,15,.76);backdrop-filter:blur(8px); }
+    .profile-modal.open { display:flex; }
+    .profile-card { width:min(440px,100%);padding:25px;border:1px solid var(--line);border-radius:22px;background:#111b2d;box-shadow:0 24px 90px rgba(0,0,0,.5); }
+    .profile-head { display:flex;align-items:center;gap:15px;margin-bottom:20px; }
+    .profile-avatar { width:68px;height:68px;flex:0 0 68px;border-radius:20px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#24476b,#333d72);font-size:25px;font-weight:800; }
+    .profile-avatar img { width:100%;height:100%;object-fit:cover; }
+    .profile-name { margin:0;font-size:21px;overflow-wrap:anywhere; }
+    .profile-caption { margin:5px 0 0;color:var(--muted);font-size:12px; }
+    .profile-section { margin:18px 0; }
+    .profile-section label { display:block;margin-bottom:8px;color:#c4d2e6;font-size:12px;font-weight:700; }
+    .profile-bio { min-height:70px;color:#dce7f7;font-size:14px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere; }
+    .profile-editor { width:100%;min-height:110px;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;outline:none;background:#0b1322;color:var(--text);font:inherit; }
+    .profile-editor:focus { border-color:rgba(112,197,255,.65); }
+    .profile-actions { display:flex;justify-content:flex-end;gap:9px;margin-top:18px; }
+    .profile-status { min-height:18px;margin:10px 0 0;color:var(--muted);font-size:12px; }
+    .profile-admin { color:#ff6678;font-size:10px;font-weight:900;letter-spacing:.08em; }
+\n    @media(max-width:980px) {
       .shell { grid-template-columns:170px minmax(0,1fr); }
       .right-panel { grid-column:1/-1;min-height:120px; }
       .friend-list { flex-direction:row;flex-wrap:wrap; }
@@ -162,7 +181,33 @@
     </aside>
   </main>
 
-  <script type="module">
+
+  <div class="profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileName">
+    <section class="profile-card">
+      <div class="profile-head">
+        <div class="profile-avatar" id="profileAvatar">W</div>
+        <div>
+          <h2 class="profile-name" id="profileName">Member</h2>
+          <p class="profile-caption" id="profileCaption">Wreckroom member</p>
+        </div>
+      </div>
+      <div class="profile-section" id="profileBioView">
+        <label>ABOUT ME</label>
+        <div class="profile-bio" id="profileBio">No bio yet.</div>
+      </div>
+      <div class="profile-section" id="profileBioEdit" hidden>
+        <label for="profileBioInput">ABOUT ME · MAX. 160 CHARACTERS</label>
+        <textarea class="profile-editor" id="profileBioInput" maxlength="160" placeholder="Tell the community a little about yourself…"></textarea>
+      </div>
+      <p class="profile-status" id="profileStatus" role="status"></p>
+      <div class="profile-actions">
+        <button type="button" id="profileClose">Close</button>
+        <button type="button" id="profileEdit">Edit profile</button>
+        <button type="button" id="profileSave" class="send" hidden>Save</button>
+      </div>
+    </section>
+  </div>
+\n  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
     import {
@@ -195,7 +240,7 @@
     let username = "Member";
     let ready = false;
     let restricted = false;
-    let moderationTimer = null;
+    let moderationTimer = null;\n    let profileEditing = false;
 
     function applyModeration(record) {
       const banned = record?.status === "banned";
@@ -288,7 +333,115 @@
       document.getElementById("onlineCount").textContent = String(count);
     }
 
-    onAuthStateChanged(auth, async user => {
+
+    const profileModal = document.getElementById("profileModal");
+    const profileAvatar = document.getElementById("profileAvatar");
+    const profileName = document.getElementById("profileName");
+    const profileCaption = document.getElementById("profileCaption");
+    const profileBio = document.getElementById("profileBio");
+    const profileBioInput = document.getElementById("profileBioInput");
+    const profileBioView = document.getElementById("profileBioView");
+    const profileBioEdit = document.getElementById("profileBioEdit");
+    const profileStatus = document.getElementById("profileStatus");
+    const profileEdit = document.getElementById("profileEdit");
+    const profileSave = document.getElementById("profileSave");
+    let openedProfileUid = null;
+
+    function closeProfile() {
+      profileModal.classList.remove("open");
+      profileEditing = false;
+      openedProfileUid = null;
+    }
+
+    async function openProfile(targetUid, fallbackName = "Member") {
+      if (!targetUid) return;
+      openedProfileUid = targetUid;
+      profileStatus.textContent = "Loading profile…";
+      profileModal.classList.add("open");
+      profileEditing = false;
+      profileBioView.hidden = false;
+      profileBioEdit.hidden = true;
+      profileEdit.hidden = targetUid !== uid;
+      profileSave.hidden = true;
+      profileName.textContent = fallbackName;
+      profileCaption.textContent = targetUid === ADMIN_UID ? "Wreckroom administrator" : "Wreckroom member";
+      profileAvatar.replaceChildren();
+      profileAvatar.textContent = String(fallbackName || "M").trim().slice(0,1).toUpperCase();
+      try {
+        const [nameSnap, profileSnap] = await Promise.all([
+          get(ref(db, "usernames/" + targetUid)),
+          get(ref(db, "profiles/" + targetUid))
+        ]);
+        if (openedProfileUid !== targetUid) return;
+        const savedName = nameSnap.exists() ? String(nameSnap.val()).slice(0,30) : fallbackName;
+        const profile = profileSnap.val() || {};
+        profileName.textContent = savedName || "Member";
+        if (targetUid === ADMIN_UID) profileName.classList.add("admin-name");
+        else profileName.classList.remove("admin-name");
+        profileCaption.textContent = targetUid === ADMIN_UID ? "Wreckroom administrator" : "Wreckroom member";
+        profileBio.textContent = typeof profile.bio === "string" && profile.bio.trim() ? profile.bio : "No bio yet.";
+        const photo = targetUid === uid ? auth.currentUser?.photoURL : profile.photoURL;
+        if (typeof photo === "string" && photo.startsWith("https://")) {
+          const img = document.createElement("img");
+          img.src = photo;
+          img.alt = "";
+          img.referrerPolicy = "no-referrer";
+          profileAvatar.replaceChildren(img);
+        } else {
+          profileAvatar.textContent = (savedName || "M").trim().slice(0,1).toUpperCase();
+        }
+        profileBioInput.value = typeof profile.bio === "string" ? profile.bio.slice(0,160) : "";
+        profileStatus.textContent = "";
+      } catch (error) {
+        profileStatus.textContent = "Could not load profile: " + (error.message || "Unknown error");
+      }
+    }
+
+    document.getElementById("profileClose").addEventListener("click", closeProfile);
+    profileModal.addEventListener("click", event => { if (event.target === profileModal) closeProfile(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape" && profileModal.classList.contains("open")) closeProfile(); });
+    profileEdit.addEventListener("click", () => {
+      if (openedProfileUid !== uid) return;
+      profileEditing = true;
+      profileBioView.hidden = true;
+      profileBioEdit.hidden = false;
+      profileEdit.hidden = true;
+      profileSave.hidden = false;
+      profileStatus.textContent = "";
+      profileBioInput.focus();
+    });
+    profileSave.addEventListener("click", async () => {
+      if (openedProfileUid !== uid || !auth.currentUser) return;
+      const bio = profileBioInput.value.trim().slice(0,160);
+      profileSave.disabled = true;
+      profileStatus.textContent = "Saving…";
+      try {
+        await set(ref(db, "profiles/" + uid), {
+          bio,
+          photoURL: auth.currentUser.photoURL || "",
+          updatedAt: Date.now()
+        });
+        profileBio.textContent = bio || "No bio yet.";
+        profileBioView.hidden = false;
+        profileBioEdit.hidden = true;
+        profileEdit.hidden = false;
+        profileSave.hidden = true;
+        profileEditing = false;
+        profileStatus.textContent = "Profile saved.";
+      } catch (error) {
+        profileStatus.textContent = "Could not save profile: " + (error.message || "Unknown error");
+      } finally {
+        profileSave.disabled = false;
+      }
+    });
+    document.addEventListener("click", event => {
+      const trigger = event.target.closest("[data-profile-uid]");
+      if (trigger) openProfile(trigger.dataset.profileUid, trigger.textContent.trim());
+    });
+    document.getElementById("currentUser").addEventListener("click", () => {
+      if (uid) openProfile(uid, username);
+    });
+\n    document.getElementById("currentUser").style.cursor = "pointer";\n\n    onAuthStateChanged(auth, async user => {
       if (!user) {
         window.location.replace("index.html");
         return;
