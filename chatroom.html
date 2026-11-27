@@ -321,7 +321,6 @@
         await onDisconnect(userStatusRef).remove();
         await set(userStatusRef, { name: username, online: true });
 
-        const currentUserLabel = document.getElementById("currentUser");
         onValue(ref(db, `usernames/${uid}`), snapshot => {
           if (!snapshot.exists()) return;
           username = String(snapshot.val()).slice(0, 30) || "Member";
