@@ -292,8 +292,10 @@
       bubble.className = "bubble";
       const meta = document.createElement("div");
       meta.className = "message-meta";
-      const name = document.createElement("span");
-      name.className = "message-name";
+      const name = document.createElement("button");
+      name.type = "button";
+      name.className = "profile-trigger message-name";
+      name.dataset.profileUid = String(message.uid || "");
       name.textContent = String(message.name || "Member").slice(0, 30);
       if (message.uid === ADMIN_UID) name.classList.add("admin-name");
       const time = document.createElement("span");
@@ -326,8 +328,10 @@
         row.className = "friend";
         const dot = document.createElement("span");
         dot.className = "friend-dot";
-        const name = document.createElement("span");
-        name.className = "friend-name";
+        const name = document.createElement("button");
+        name.type = "button";
+        name.className = "profile-trigger friend-name";
+        name.dataset.profileUid = childSnapshot.key;
         name.textContent = String(person.name || "Member").slice(0, 30);
         if (childSnapshot.key === ADMIN_UID) name.classList.add("admin-name");
         row.append(dot, name);
