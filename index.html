@@ -184,19 +184,32 @@
       status.textContent = messages[error.code] || error.message || "Something went wrong. Please try again.";
     }
 
+    const ADMIN_UID = "OiXzubR4UFUc3maV2WATBUc1IW32";
+    const RESERVED_USERNAMES = new Set(["admin","administrator","owner","dev","developer","moderator","mod","staff","support","system","official","wreckroom"]);
+
+    function isReservedUsername(value) {
+      return RESERVED_USERNAMES.has(value.trim().toLowerCase());
+    }
+
     async function setUserName(user) {
       const usernameRef = ref(db, `usernames/${user.uid}`);
       const snapshot = await get(usernameRef);
       if (snapshot.exists()) return snapshot.val();
 
-      let username = user.displayName?.trim();
-      while (!username || username.length < 3 || username.length > 20) {
-        username = prompt("Choose a username (3–20 characters):");
+      let username = user.uid === ADMIN_UID ? (user.displayName?.trim() || "Admin") : user.displayName?.trim();
+      while (
+        !username || username.length < 3 || username.length > 20 ||
+        (user.uid !== ADMIN_UID && isReservedUsername(username))
+      ) {
+        username = prompt("Choose a username (3–20 characters). Reserved names such as admin, dev and moderator are not allowed:");
         if (username === null) {
           await auth.signOut();
           return null;
         }
         username = username.trim();
+        if (isReservedUsername(username)) {
+          alert("This username is reserved. Please choose another one.");
+        }
       }
       await set(usernameRef, username);
       return username;
