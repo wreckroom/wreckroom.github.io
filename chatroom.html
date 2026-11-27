@@ -368,12 +368,11 @@
       profileAvatar.replaceChildren();
       profileAvatar.textContent = String(fallbackName || "M").trim().slice(0,1).toUpperCase();
       try {
-        const [nameSnap, profileSnap] = await Promise.all([
-          get(ref(db, "usernames/" + targetUid)),
-          get(ref(db, "profiles/" + targetUid))
-        ]);
+        const profileSnap = await get(ref(db, "profiles/" + targetUid));
         if (openedProfileUid !== targetUid) return;
-        const savedName = nameSnap.exists() ? String(nameSnap.val()).slice(0,30) : fallbackName;
+        // Other users' usernames are intentionally not readable in the database rules.
+        // Use the name already shown in the chat or online list instead.
+        const savedName = String(fallbackName || "Member").slice(0,30);
         const profile = profileSnap.val() || {};
         profileName.textContent = savedName || "Member";
         if (targetUid === ADMIN_UID) profileName.classList.add("admin-name");
