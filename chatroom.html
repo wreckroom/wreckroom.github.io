@@ -72,7 +72,6 @@
     .message-name { color:var(--accent);font-size:12px;font-weight:800; }
     .message-time { color:#71829d;font-size:10px; }
     .message-text { color:#e4edf9;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere; }
-    .message-image { display:block;max-width:min(360px,100%);max-height:300px;margin-top:9px;border-radius:10px; }
     .empty { margin:auto;color:#71829d;text-align:center;font-size:13px; }
     .composer { padding:14px;border-top:1px solid var(--line); }
     .composer-row { display:flex;align-items:center;gap:9px; }
@@ -81,8 +80,6 @@
       outline:none;background:#0b1322;color:var(--text);font:inherit;
     }
     .composer input:focus { border-color:rgba(112,197,255,.65); }
-    .file-label { display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:#1a2940;border:1px solid var(--line);cursor:pointer;font-size:18px; }
-    .file-label input { display:none; }
     .send { color:#071321;background:linear-gradient(110deg,var(--accent),#9bb4ff);border:0;padding:12px 19px; }
     .composer-hint { min-height:15px;margin:7px 3px 0;color:#71829d;font-size:11px; }
     .right-panel { padding:20px 16px;display:flex;flex-direction:column; }
@@ -137,11 +134,10 @@
       </div>
       <form class="composer" id="messageForm">
         <div class="composer-row">
-          <label class="file-label" title="Attach an image" aria-label="Attach an image">＋<input type="file" id="imgInput" accept="image/*"></label>
           <input type="text" id="msgInput" maxlength="1000" placeholder="Write a message…" autocomplete="off" aria-label="Message">
           <button class="send" id="sendBtn" type="submit">Send</button>
         </div>
-        <p class="composer-hint" id="composerHint" role="status" aria-live="polite">Images up to 5 MB. Be kind to each other.</p>
+        <p class="composer-hint" id="composerHint" role="status" aria-live="polite">Be kind to each other.</p>
       </form>
     </section>
 
@@ -160,7 +156,6 @@
       getDatabase, ref, get, child, push, set, onChildAdded, onValue,
       onDisconnect, remove, serverTimestamp, query, limitToLast
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAX0ApIVdwwav3rOyXHfJPuAfc-_ix4uFQ",
@@ -176,11 +171,9 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-    const storage = getStorage(app);
 
     const chatBox = document.getElementById("chatBox");
     const msgInput = document.getElementById("msgInput");
-    const imgInput = document.getElementById("imgInput");
     const sendBtn = document.getElementById("sendBtn");
     const friendList = document.getElementById("friendList");
     const composerHint = document.getElementById("composerHint");
@@ -230,15 +223,6 @@
       bubble.append(meta);
       if (text.textContent) bubble.append(text);
 
-      if (typeof message.imageURL === "string" && message.imageURL.startsWith("https://")) {
-        const image = document.createElement("img");
-        image.className = "message-image";
-        image.src = message.imageURL;
-        image.alt = "Image shared in chat";
-        image.loading = "lazy";
-        image.referrerPolicy = "no-referrer";
-        bubble.append(image);
-      }
 
       row.append(avatar, bubble);
       chatBox.append(row);
@@ -301,29 +285,16 @@
       event.preventDefault();
       if (!ready || !uid || sendBtn.disabled) return;
       const text = msgInput.value.trim();
-      const file = imgInput.files?.[0];
-      if (!text && !file) return;
-      if (file && (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024)) {
-        composerHint.textContent = "Please choose an image smaller than 5 MB.";
-        return;
-      }
+      if (!text) return;
 
       sendBtn.disabled = true;
       composerHint.textContent = "Sending…";
       try {
-        let imageURL = null;
-        if (file) {
-          const extension = file.type.split("/")[1].replace(/[^a-z0-9]/gi, "").slice(0, 8) || "img";
-          const fileRef = storageRef(storage, `images/${uid}-${Date.now()}.${extension}`);
-          await uploadBytes(fileRef, file, { contentType: file.type });
-          imageURL = await getDownloadURL(fileRef);
-        }
         await push(ref(db, "messages"), {
           uid, name: username, photoURL: auth.currentUser?.photoURL || "",
-          text: text.slice(0, 1000), imageURL, timestamp: serverTimestamp()
+          text: text.slice(0, 1000), timestamp: serverTimestamp()
         });
         msgInput.value = "";
-        imgInput.value = "";
         composerHint.textContent = "Message sent.";
       } catch (error) {
         composerHint.textContent = error.message || "Message could not be sent.";
