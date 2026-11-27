@@ -110,7 +110,12 @@
     .profile-modal { position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,7,15,.76);backdrop-filter:blur(8px); }
     .profile-modal.open { display:flex; }
     .profile-card { width:min(440px,100%);padding:25px;border:1px solid var(--line);border-radius:22px;background:#111b2d;box-shadow:0 24px 90px rgba(0,0,0,.5); }
+    .profile-banner { height:112px;margin:-25px -25px 20px;border-radius:21px 21px 0 0;background:linear-gradient(120deg,#1e3d60,#343d70);background-size:cover;background-position:center; }
     .profile-head { display:flex;align-items:center;gap:15px;margin-bottom:20px; }
+    .profile-upload-row { display:flex;flex-wrap:wrap;gap:9px;align-items:center; }
+    .profile-upload-row input[type="file"] { max-width:100%;color:var(--muted);font-size:11px; }
+    .profile-upload-row button { padding:8px 10px;font-size:11px; }
+    .profile-upload-note { margin:7px 0 0;color:#71829d;font-size:11px;line-height:1.5; }
     .profile-avatar { width:68px;height:68px;flex:0 0 68px;border-radius:20px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#24476b,#333d72);font-size:25px;font-weight:800; }
     .profile-avatar img { width:100%;height:100%;object-fit:cover; }
     .profile-name { margin:0;font-size:21px;overflow-wrap:anywhere; }
@@ -185,6 +190,7 @@
 
   <div class="profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileName">
     <section class="profile-card">
+      <div class="profile-banner" id="profileBanner"></div>
       <div class="profile-head">
         <div class="profile-avatar" id="profileAvatar">W</div>
         <div>
@@ -197,8 +203,14 @@
         <div class="profile-bio" id="profileBio">No bio yet.</div>
       </div>
       <div class="profile-section" id="profileBioEdit" hidden>
-        <label for="profileBioInput">ABOUT ME · MAX. 160 CHARACTERS</label>
-        <textarea class="profile-editor" id="profileBioInput" maxlength="160" placeholder="Tell the community a little about yourself…"></textarea>
+        <label for="profilePhotoFile">PROFILE PICTURE</label>
+        <div class="profile-upload-row"><input type="file" id="profilePhotoFile" accept="image/png,image/jpeg,image/webp,image/gif"><button type="button" id="removeProfilePhoto">Remove picture</button></div>
+        <div class="profile-section">
+          <label for="profileBannerFile">PROFILE BANNER</label>
+          <div class="profile-upload-row"><input type="file" id="profileBannerFile" accept="image/png,image/jpeg,image/webp,image/gif"><button type="button" id="removeProfileBanner">Remove banner</button></div>
+        </div>
+        <p class="profile-upload-note">PNG, JPG, WEBP oder GIF · max. 5 MB je Bild</p>
+        <div class="profile-section"><label for="profileBioInput">ABOUT ME · MAX. 160 CHARACTERS</label><textarea class="profile-editor" id="profileBioInput" maxlength="160" placeholder="Tell the community a little about yourself…"></textarea></div>
       </div>
       <p class="profile-status" id="profileStatus" role="status"></p>
       <div class="profile-actions">
@@ -353,6 +365,32 @@
     const profileEdit = document.getElementById("profileEdit");
     const profileSave = document.getElementById("profileSave");
     let openedProfileUid = null;
+    let currentProfileData = { bio: "", photoURL: "", bannerURL: "" };
+    let editingProfileData = { photoURL: "", bannerURL: "" };
+    const profileBanner = document.getElementById("profileBanner");
+    const profilePhotoFile = document.getElementById("profilePhotoFile");
+    const profileBannerFile = document.getElementById("profileBannerFile");
+    const CLOUDINARY_CLOUD_NAME = "nhxdnxif";
+    const CLOUDINARY_UPLOAD_PRESET = "ml_default";
+    function safeImageUrl(value) { return typeof value === "string" && /^https:\/\//i.test(value) ? value : ""; }
+    function renderProfileImages(photoURL, bannerURL, fallbackName) {
+      profileAvatar.replaceChildren();
+      const photo = safeImageUrl(photoURL);
+      if (photo) { const img = document.createElement("img"); img.src = photo; img.alt = ""; img.referrerPolicy = "no-referrer"; profileAvatar.appendChild(img); }
+      else profileAvatar.textContent = (fallbackName || "M").trim().slice(0,1).toUpperCase();
+      const banner = safeImageUrl(bannerURL);
+      profileBanner.style.backgroundImage = banner ? "url(" + JSON.stringify(banner) + ")" : "linear-gradient(120deg,#1e3d60,#343d70)";
+    }
+    async function uploadProfileImage(file, folder) {
+      if (!file) return "";
+      if (!["image/png","image/jpeg","image/webp","image/gif"].includes(file.type)) throw new Error("Bitte eine PNG-, JPG-, WEBP- oder GIF-Datei auswählen.");
+      if (file.size > 5 * 1024 * 1024) throw new Error("Das Bild darf maximal 5 MB groß sein.");
+      const data = new FormData(); data.append("file", file); data.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); data.append("folder", folder);
+      const response = await fetch("https://api.cloudinary.com/v1_1/" + CLOUDINARY_CLOUD_NAME + "/image/upload", { method: "POST", body: data });
+      const result = await response.json();
+      if (!response.ok || !result.secure_url) throw new Error(result.error?.message || "Upload fehlgeschlagen.");
+      return result.secure_url;
+    }
 
     function closeProfile() {
       profileModal.classList.remove("open");
@@ -386,15 +424,11 @@
         else profileName.classList.remove("admin-name");
         profileCaption.textContent = targetUid === ADMIN_UID ? "Wreckroom administrator" : "Wreckroom member";
         profileBio.textContent = typeof profile.bio === "string" && profile.bio.trim() ? profile.bio : "No bio yet.";
-        const photo = targetUid === uid ? auth.currentUser?.photoURL : profile.photoURL;
-        if (typeof photo === "string" && photo.startsWith("https://")) {
-          const img = document.createElement("img");
-          img.src = photo;
-          img.alt = "";
-          img.referrerPolicy = "no-referrer";
-          profileAvatar.replaceChildren(img);
-        } else {
-          profileAvatar.textContent = (savedName || "M").trim().slice(0,1).toUpperCase();
+        const photo = safeImageUrl(profile.photoURL) || (targetUid === uid ? safeImageUrl(auth.currentUser?.photoURL) : "");
+        renderProfileImages(photo, profile.bannerURL, savedName);
+        if (targetUid === uid) {
+          currentProfileData = { bio: profile.bio || "", photoURL: profile.photoURL || "", bannerURL: profile.bannerURL || "" };
+          editingProfileData = { photoURL: photo, bannerURL: profile.bannerURL || "" };
         }
         profileBioInput.value = typeof profile.bio === "string" ? profile.bio.slice(0,160) : "";
         profileStatus.textContent = "";
@@ -414,19 +448,36 @@
       profileEdit.hidden = true;
       profileSave.hidden = false;
       profileStatus.textContent = "";
+      editingProfileData = { ...currentProfileData, photoURL: safeImageUrl(currentProfileData.photoURL) || safeImageUrl(auth.currentUser?.photoURL) };
+      profilePhotoFile.value = ""; profileBannerFile.value = "";
+      renderProfileImages(editingProfileData.photoURL, editingProfileData.bannerURL, username);
       profileBioInput.focus();
     });
+    profilePhotoFile.addEventListener("change", async () => {
+      const file = profilePhotoFile.files?.[0]; if (!file) return;
+      profileStatus.textContent = "Uploading profile picture…";
+      try { editingProfileData.photoURL = await uploadProfileImage(file, "wreckroom/profiles/avatars"); renderProfileImages(editingProfileData.photoURL, editingProfileData.bannerURL, username); profileStatus.textContent = "Profile picture uploaded. Save to apply it."; }
+      catch (error) { profileStatus.textContent = error.message || "Upload failed."; }
+    });
+    profileBannerFile.addEventListener("change", async () => {
+      const file = profileBannerFile.files?.[0]; if (!file) return;
+      profileStatus.textContent = "Uploading banner…";
+      try { editingProfileData.bannerURL = await uploadProfileImage(file, "wreckroom/profiles/banners"); renderProfileImages(editingProfileData.photoURL, editingProfileData.bannerURL, username); profileStatus.textContent = "Banner uploaded. Save to apply it."; }
+      catch (error) { profileStatus.textContent = error.message || "Upload failed."; }
+    });
+    document.getElementById("removeProfilePhoto").addEventListener("click", () => { editingProfileData.photoURL = ""; renderProfileImages("", editingProfileData.bannerURL, username); profilePhotoFile.value = ""; });
+    document.getElementById("removeProfileBanner").addEventListener("click", () => { editingProfileData.bannerURL = ""; renderProfileImages(editingProfileData.photoURL, "", username); profileBannerFile.value = ""; });
+
     profileSave.addEventListener("click", async () => {
       if (openedProfileUid !== uid || !auth.currentUser) return;
       const bio = profileBioInput.value.trim().slice(0,160);
       profileSave.disabled = true;
       profileStatus.textContent = "Saving…";
       try {
-        await set(ref(db, "profiles/" + uid), {
-          bio,
-          photoURL: auth.currentUser.photoURL || "",
-          updatedAt: Date.now()
-        });
+        const savedProfile = { ...currentProfileData, bio, photoURL: safeImageUrl(editingProfileData.photoURL), bannerURL: safeImageUrl(editingProfileData.bannerURL), updatedAt: Date.now() };
+        await set(ref(db, "profiles/" + uid), savedProfile);
+        currentProfileData = savedProfile;
+        renderProfileImages(savedProfile.photoURL || auth.currentUser.photoURL || "", savedProfile.bannerURL, username);
         profileBio.textContent = bio || "No bio yet.";
         profileBioView.hidden = false;
         profileBioEdit.hidden = true;
@@ -528,8 +579,10 @@
           applyModeration(latestModeration);
           return;
         }
+        const profileSnapshot = await get(ref(db, "profiles/" + uid));
+        const latestProfile = profileSnapshot.val() || {};
         await push(ref(db, "messages"), {
-          uid, name: username, photoURL: auth.currentUser?.photoURL || "",
+          uid, name: username, photoURL: safeImageUrl(latestProfile.photoURL) || auth.currentUser?.photoURL || "",
           text: text.slice(0, 1000), timestamp: serverTimestamp()
         });
         msgInput.value = "";
