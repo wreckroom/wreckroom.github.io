@@ -208,16 +208,32 @@
       const usernameRef = ref(db, `usernames/${user.uid}`);
       const snapshot = await get(usernameRef);
       const isAdmin = user.uid === ADMIN_UID;
-      let username = snapshot.exists()
-        ? String(snapshot.val()).trim()
-        : (user.displayName?.trim() || "");
+
+      // A name already stored for this account was previously assigned/approved.
+      // Keep it as-is on every later login, including short admin-assigned names.
+      if (snapshot.exists()) {
+        const savedUsername = String(snapshot.val()).trim();
+        if (
+          savedUsername.length >= 1 &&
+          savedUsername.length <= 20 &&
+          /^[A-Za-z0-9_]+$/.test(savedUsername) &&
+          /[A-Za-z0-9]/.test(savedUsername)
+        ) {
+          return savedUsername;
+        }
+      }
+
+      // Only a genuinely new name selection is subject to the normal length rules.
+      let username = user.displayName?.trim() || "";
 
       while (true) {
-        const valid = username.length >= 5 && username.length <= 20 &&
+        const minLength = isAdmin ? 1 : 5;
+        const valid = username.length >= minLength && username.length <= 20 &&
           /^[A-Za-z0-9_]+$/.test(username) && /[A-Za-z0-9]/.test(username) &&
           (isAdmin || !isReservedUsername(username));
         if (!valid) {
-          username = prompt("Choose a username (5–20 characters; letters, numbers and _ only). Reserved names such as admin, dev and moderator are not allowed:", username);
+          const lengthRule = isAdmin ? "1–20" : "5–20";
+          username = prompt(`Choose a username (${lengthRule} characters; letters, numbers and _ only).${isAdmin ? "" : " Reserved names such as admin, dev and moderator are not allowed:"}`, username);
           if (username === null) {
             await auth.signOut();
             return null;
@@ -237,7 +253,7 @@
           }
         }
 
-        username = prompt("This username is already taken. Please choose a different one (5–20 characters):", username);
+        username = prompt(`This username is already taken. Please choose a different one (${minLength}–20 characters):`, username);
         if (username === null) {
           await auth.signOut();
           return null;
