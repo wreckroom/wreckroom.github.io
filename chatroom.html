@@ -382,7 +382,7 @@
     const gradientPreview = document.getElementById("gradientPreview");
     const DEFAULT_GRADIENT_START = "#70c5ff", DEFAULT_GRADIENT_END = "#9b7cff";
     function validHexColor(value, fallback) { return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback; }
-    function profileGradient(start, end) { return `linear-gradient(110deg, ${validHexColor(start, DEFAULT_GRADIENT_START)}, ${validHexColor(end, DEFAULT_GRADIENT_END)})`; }
+    function profileGradient(start, end) { return `linear-gradient(to bottom, ${validHexColor(start, DEFAULT_GRADIENT_START)}, ${validHexColor(end, DEFAULT_GRADIENT_END)})`; }
     function applyNameGradient(element) { if (!element) return; element.style.backgroundImage = ""; element.style.webkitTextFillColor = ""; element.classList.remove("gradient-name"); }
     function updateGradientPreview() { const gradient = profileGradient(gradientStartInput.value, gradientEndInput.value); gradientPreview.style.background = gradient; if (profileCard) profileCard.style.background = gradient; }
     gradientStartInput.addEventListener("input", updateGradientPreview); gradientEndInput.addEventListener("input", updateGradientPreview);
