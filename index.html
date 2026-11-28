@@ -216,7 +216,7 @@
         if (
           savedUsername.length >= 1 &&
           savedUsername.length <= 20 &&
-          /^[A-Za-z0-9_]+$/.test(savedUsername) &&
+          (isAdmin ? /^[A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*$/.test(savedUsername) : /^[A-Za-z0-9_]+$/.test(savedUsername)) &&
           /[A-Za-z0-9]/.test(savedUsername)
         ) {
           return savedUsername;
@@ -229,7 +229,7 @@
       while (true) {
         const minLength = isAdmin ? 1 : 5;
         const valid = username.length >= minLength && username.length <= 20 &&
-          /^[A-Za-z0-9_]+$/.test(username) && /[A-Za-z0-9]/.test(username) &&
+          (isAdmin ? /^[A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*$/.test(username) : /^[A-Za-z0-9_]+$/.test(username)) && /[A-Za-z0-9]/.test(username) &&
           (isAdmin || !isReservedUsername(username));
         if (!valid) {
           const lengthRule = isAdmin ? "1–20" : "5–20";
