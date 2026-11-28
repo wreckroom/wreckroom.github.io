@@ -118,6 +118,7 @@
     .profile-upload-note { margin:7px 0 0;color:#71829d;font-size:11px;line-height:1.5; }
     .gradient-controls { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
     .gradient-color { display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:11px;background:#0b1322; }
+    .profile-section .gradient-color { display:flex; }
     .gradient-color input[type="color"] { width:34px;height:30px;padding:0;border:0;background:transparent;cursor:pointer; }
     .gradient-color span { color:var(--muted);font-size:11px;font-weight:700; }
     .gradient-preview { height:34px;margin-top:10px;border:1px solid rgba(255,255,255,.12);border-radius:10px; }
@@ -384,8 +385,9 @@
     function profileGradient(start, end) { return `linear-gradient(110deg, ${validHexColor(start, DEFAULT_GRADIENT_START)}, ${validHexColor(end, DEFAULT_GRADIENT_END)})`; }
     function applyNameGradient(element, start, end, isAdmin = false) { if (!element || isAdmin) return; element.style.backgroundImage = profileGradient(start, end); element.classList.add("gradient-name"); }
     function updateGradientPreview() { gradientPreview.style.background = profileGradient(gradientStartInput.value, gradientEndInput.value); if (profileBanner && !editingProfileData.bannerURL) profileBanner.style.backgroundImage = profileGradient(gradientStartInput.value, gradientEndInput.value); }
-    gradientStartInput.addEventListener("input", updateGradientPreview); gradientEndInput.addEventListener("input", updateGradientPreview); updateGradientPreview();
+    gradientStartInput.addEventListener("input", updateGradientPreview); gradientEndInput.addEventListener("input", updateGradientPreview);
     const profileBanner = document.getElementById("profileBanner");
+    updateGradientPreview();
     const profilePhotoFile = document.getElementById("profilePhotoFile");
     const profileBannerFile = document.getElementById("profileBannerFile");
     const CLOUDINARY_CLOUD_NAME = "nhxdnxif";
