@@ -483,7 +483,13 @@
     }
     musicSourceGrid.addEventListener("click", event => {
       const button = event.target.closest("[data-music-source]");
-      if (button) setMusicSource(button.dataset.musicSource);
+      if (button) {
+        const nextSource = button.dataset.musicSource;
+        if (nextSource !== selectedMusicSource) {
+          editingMusicData = null; musicTitleInput.value = ""; musicArtistInput.value = ""; musicUrlInput.value = ""; musicFileInput.value = "";
+        }
+        setMusicSource(nextSource);
+      }
     });
     function musicEmbedUrl(music) {
       try {
