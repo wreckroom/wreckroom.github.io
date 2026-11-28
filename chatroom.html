@@ -575,7 +575,8 @@
         audio.addEventListener("ended", () => { progress.value = "0"; });
         progress.addEventListener("input", () => { if (audio.duration) audio.currentTime = Number(progress.value) / 1000 * audio.duration; });
         volume.addEventListener("input", () => { audio.volume = Number(volume.value); });
-        controls.append(play, progress, time, volume); musicViewContent.append(controls);\n        audio.play().catch(() => { /* Browser autoplay policy may require a user gesture. */ });
+        controls.append(play, progress, time, volume); musicViewContent.append(controls);
+        audio.play().catch(() => { /* Browser autoplay policy may require a user gesture. */ });
       } else if (music.source === "soundcloud") {
         const controls = document.createElement("div"); controls.className = "music-sc-controls";
         const play = document.createElement("button"); play.type = "button"; play.className = "music-play"; play.setAttribute("aria-label", "Play");
@@ -595,7 +596,8 @@
           widget.bind(window.SC.Widget.Events.PAUSE, () => { play.innerHTML = playIcon; play.setAttribute("aria-label", "Play"); });
           widget.bind(window.SC.Widget.Events.FINISH, () => { play.innerHTML = playIcon; play.setAttribute("aria-label", "Play"); time.textContent = "0:00 / " + formatMusicTime(durationMs / 1000); });
           widget.bind(window.SC.Widget.Events.PLAY_PROGRESS, event => { if (!durationMs && event.duration) durationMs = event.duration; time.textContent = formatMusicTime((event.currentPosition || 0) / 1000) + " / " + formatMusicTime((durationMs || event.duration || 0) / 1000); });
-          play.addEventListener("click", () => widget.isPaused(paused => paused ? widget.play() : widget.pause()));\n          volume.addEventListener("input", () => widget.setVolume(Math.round(Number(volume.value) * 100)));
+          play.addEventListener("click", () => widget.isPaused(paused => paused ? widget.play() : widget.pause()));
+          volume.addEventListener("input", () => widget.setVolume(Math.round(Number(volume.value) * 100)));
         };
         if (window.SC && window.SC.Widget) initSoundCloud();
         else {
@@ -635,7 +637,13 @@
       editingMusicData = null; musicTitleInput.value = ""; musicArtistInput.value = ""; musicUrlInput.value = ""; musicFileInput.value = ""; profileStatus.textContent = "Song removed. Save your profile to apply the change.";
     });
 
+    function stopProfileMusic() {
+      if (profileAudio) { profileAudio.pause(); profileAudio.currentTime = 0; profileAudio = null; }
+      if (musicViewContent) musicViewContent.querySelectorAll("iframe").forEach(frame => { frame.src = "about:blank"; frame.remove(); });
+    }
+
     function closeProfile() {
+      stopProfileMusic();
       profileModal.classList.remove("open");
       profileEditing = false;
       openedProfileUid = null;
@@ -643,6 +651,7 @@
 
     async function openProfile(targetUid, fallbackName = "Member") {
       if (!targetUid) return;
+      stopProfileMusic();
       openedProfileUid = targetUid;
       profileStatus.textContent = "Loading profile…";
       profileModal.classList.add("open");
