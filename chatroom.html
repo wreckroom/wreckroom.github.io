@@ -217,7 +217,7 @@
           <div class="profile-upload-row"><input type="file" id="profileBannerFile" accept="image/png,image/jpeg,image/webp,image/gif"><button type="button" id="removeProfileBanner">Remove banner</button></div>
         </div>
         <p class="profile-upload-note">PNG, JPG, WEBP oder GIF · max. 5 MB je Bild</p>
-        <div class="profile-section"><label>PROFILE GRADIENT</label><div class="gradient-controls"><label class="gradient-color"><input type="color" id="gradientStart" value="#70c5ff"><span>Start color</span></label><label class="gradient-color"><input type="color" id="gradientEnd" value="#9b7cff"><span>End color</span></label></div><div class="gradient-preview" id="gradientPreview"></div><p class="profile-upload-note">Your gradient colors appear on your name in chat and on your profile.</p></div>
+        <div class="profile-section"><label>PROFILE BACKGROUND GRADIENT</label><div class="gradient-controls"><label class="gradient-color"><input type="color" id="gradientStart" value="#70c5ff"><span>Start color</span></label><label class="gradient-color"><input type="color" id="gradientEnd" value="#9b7cff"><span>End color</span></label></div><div class="gradient-preview" id="gradientPreview"></div><p class="profile-upload-note">Your gradient colors customize the background of your profile card.</p></div>
         <div class="profile-section"><label for="profileBioInput">ABOUT ME · MAX. 160 CHARACTERS</label><textarea class="profile-editor" id="profileBioInput" maxlength="160" placeholder="Tell the community a little about yourself…"></textarea></div>
       </div>
       <p class="profile-status" id="profileStatus" role="status"></p>
@@ -383,10 +383,11 @@
     const DEFAULT_GRADIENT_START = "#70c5ff", DEFAULT_GRADIENT_END = "#9b7cff";
     function validHexColor(value, fallback) { return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback; }
     function profileGradient(start, end) { return `linear-gradient(110deg, ${validHexColor(start, DEFAULT_GRADIENT_START)}, ${validHexColor(end, DEFAULT_GRADIENT_END)})`; }
-    function applyNameGradient(element, start, end, isAdmin = false) { if (!element || isAdmin) return; element.style.backgroundImage = profileGradient(start, end); element.classList.add("gradient-name"); }
-    function updateGradientPreview() { gradientPreview.style.background = profileGradient(gradientStartInput.value, gradientEndInput.value); if (profileBanner && !editingProfileData.bannerURL) profileBanner.style.backgroundImage = profileGradient(gradientStartInput.value, gradientEndInput.value); }
+    function applyNameGradient(element) { if (!element) return; element.style.backgroundImage = ""; element.style.webkitTextFillColor = ""; element.classList.remove("gradient-name"); }
+    function updateGradientPreview() { const gradient = profileGradient(gradientStartInput.value, gradientEndInput.value); gradientPreview.style.background = gradient; if (profileCard) profileCard.style.background = gradient; }
     gradientStartInput.addEventListener("input", updateGradientPreview); gradientEndInput.addEventListener("input", updateGradientPreview);
     const profileBanner = document.getElementById("profileBanner");
+    const profileCard = document.querySelector(".profile-card");
     updateGradientPreview();
     const profilePhotoFile = document.getElementById("profilePhotoFile");
     const profileBannerFile = document.getElementById("profileBannerFile");
@@ -401,7 +402,8 @@
       const banner = safeImageUrl(bannerURL);
       const start = validHexColor(gradientStart, DEFAULT_GRADIENT_START);
       const end = validHexColor(gradientEnd, DEFAULT_GRADIENT_END);
-      profileBanner.style.backgroundImage = banner ? "linear-gradient(120deg,rgba(0,0,0,.08),rgba(0,0,0,.08)),url(" + JSON.stringify(banner) + ")" : profileGradient(start, end);
+      profileBanner.style.backgroundImage = banner ? "linear-gradient(120deg,rgba(0,0,0,.08),rgba(0,0,0,.08)),url(" + JSON.stringify(banner) + ")" : "linear-gradient(120deg,#1e3d60,#343d70)";
+      profileCard.style.background = profileGradient(start, end);
     }
     async function uploadProfileImage(file, folder) {
       if (!file) return "";
