@@ -119,7 +119,7 @@
     .profile-column .profile-section:first-child,.profile-music-column .music-section:first-child { margin-top:0; }
     .profile-music-column { border-left:1px solid var(--line);padding-left:26px; }
     .music-edit-panel { margin-top:0; }
-    .profile-actions { position:sticky;bottom:-25px;z-index:2;padding:14px 0 0;background:linear-gradient(180deg,rgba(17,27,45,.88),#111b2d 35%); }
+    .profile-actions { position:sticky;bottom:-25px;z-index:2;padding:14px 0 0;background:transparent;border:0;box-shadow:none; }
     @media(max-width:700px) {
       .profile-card { display:block;width:min(520px,100%);max-height:92vh; }
       .profile-layout { grid-template-columns:1fr;gap:8px; }
@@ -176,6 +176,9 @@
     .music-time { color:#9aaac2;font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap; }
     .music-volume { width:68px;accent-color:#e8edf5; }
     .music-embed { display:block;width:100%;height:80px;margin-top:12px;border:0;border-radius:10px;background:#080e19; }
+    .music-sc-frame { position:absolute;width:1px;height:1px;left:-10000px;top:auto;opacity:0;pointer-events:none;border:0; }
+    .music-sc-controls { display:flex;align-items:center;gap:12px;margin-top:13px; }
+    .music-sc-time { color:#9aaac2;font-size:11px;font-variant-numeric:tabular-nums; }
     .music-empty { margin:0;color:#71829d;font-size:12px; }
     @media(max-width:420px) { .music-source-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .music-volume { width:48px; } }
 
@@ -573,6 +576,33 @@
         progress.addEventListener("input", () => { if (audio.duration) audio.currentTime = Number(progress.value) / 1000 * audio.duration; });
         volume.addEventListener("input", () => { audio.volume = Number(volume.value); });
         controls.append(play, progress, time, volume); musicViewContent.append(controls);
+      } else if (music.source === "soundcloud") {
+        const controls = document.createElement("div"); controls.className = "music-sc-controls";
+        const play = document.createElement("button"); play.type = "button"; play.className = "music-play"; play.setAttribute("aria-label", "Play");
+        const playIcon = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        const pauseIcon = '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>';
+        play.innerHTML = playIcon;
+        const time = document.createElement("span"); time.className = "music-sc-time"; time.textContent = "0:00 / 0:00";
+        controls.append(play, time); musicViewContent.append(controls);
+        const frame = document.createElement("iframe"); frame.className = "music-sc-frame"; frame.title = "SoundCloud audio"; frame.allow = "autoplay"; frame.src = "https://w.soundcloud.com/player/?url=" + encodeURIComponent(music.url) + "&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false&show_teaser=false";
+        musicViewContent.append(frame);
+        const initSoundCloud = () => {
+          if (!window.SC || !window.SC.Widget) return;
+          const widget = window.SC.Widget(frame);
+          let durationMs = 0;
+          widget.bind(window.SC.Widget.Events.READY, () => widget.getDuration(value => { durationMs = value || 0; time.textContent = "0:00 / " + formatMusicTime(durationMs / 1000); }));
+          widget.bind(window.SC.Widget.Events.PLAY, () => { play.innerHTML = pauseIcon; play.setAttribute("aria-label", "Pause"); });
+          widget.bind(window.SC.Widget.Events.PAUSE, () => { play.innerHTML = playIcon; play.setAttribute("aria-label", "Play"); });
+          widget.bind(window.SC.Widget.Events.FINISH, () => { play.innerHTML = playIcon; play.setAttribute("aria-label", "Play"); time.textContent = "0:00 / " + formatMusicTime(durationMs / 1000); });
+          widget.bind(window.SC.Widget.Events.PLAY_PROGRESS, event => { if (!durationMs && event.duration) durationMs = event.duration; time.textContent = formatMusicTime((event.currentPosition || 0) / 1000) + " / " + formatMusicTime((durationMs || event.duration || 0) / 1000); });
+          play.addEventListener("click", () => widget.isPaused(paused => paused ? widget.play() : widget.pause()));
+        };
+        if (window.SC && window.SC.Widget) initSoundCloud();
+        else {
+          let api = document.querySelector('script[data-soundcloud-widget-api]');
+          if (!api) { api = document.createElement("script"); api.src = "https://w.soundcloud.com/player/api.js"; api.dataset.soundcloudWidgetApi = "true"; document.head.append(api); }
+          api.addEventListener("load", initSoundCloud, { once: true });
+        }
       } else {
         const embedUrl = musicEmbedUrl(music);
         if (embedUrl) {
