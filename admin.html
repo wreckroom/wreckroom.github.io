@@ -51,6 +51,7 @@
       <button class="nav" data-view="users">♙ Nutzer</button>
       <button class="nav" data-view="moderation">⛨ Moderation</button>
       <button class="nav" data-view="messages">☷ Nachrichten</button>
+      <button class="nav" data-view="logins">◷ Login-Verlauf</button>
     </aside>
     <main>
       <section class="heading"><div><h1 id="pageTitle">Übersicht</h1><p id="pageSub">Aktueller Überblick über deine Community.</p></div><span class="pill"><span class="dot"></span> Live-Daten</span></section>
@@ -72,6 +73,14 @@
       <section class="view" id="moderation">
         <div class="notice"><strong>Moderation:</strong> Verwalte Timeouts und permanente Bans zentral. Änderungen werden live im Chat übernommen und zusätzlich durch die Datenbankregeln abgesichert.</div>
         <div class="panel content"><div class="content-head"><h2>Aktive Einschränkungen</h2><span class="muted" id="moderationCaption">0 aktiv</span></div><div id="moderationTable" class="tablewrap"></div></div>
+      </section>
+      <section class="view" id="logins">
+        <div class="notice"><strong>Login- und IP-Übersicht:</strong> Zeigt die beim Login vom Browser ermittelte öffentliche IP-Adresse. Diese Angabe ist nicht manipulationssicher und kann sich z. B. durch VPNs oder Mobilfunk ändern. IP-Adressen sind personenbezogene Daten; informiere Nutzer transparent über Zweck und Speicherdauer.</div>
+        <div class="stats">
+          <div class="panel stat"><div class="stat-label">Erfasste Logins</div><div class="stat-value" id="statLoginCount">—</div><div class="stat-note">Gespeicherte Anmeldeereignisse</div></div>
+          <div class="panel stat"><div class="stat-label">Unterschiedliche IPs</div><div class="stat-value" id="statIpCount">—</div><div class="stat-note">Erkannte öffentliche IP-Adressen</div></div>
+        </div>
+        <div class="panel content"><div class="content-head"><h2>Login-Verlauf</h2><input class="search" id="loginSearch" placeholder="Nutzer oder IP suchen…"></div><div id="loginTable" class="tablewrap"></div></div>
       </section>
       <section class="view" id="messages">
         <div class="panel content"><div class="content-head"><h2>Nachrichtenmoderation</h2><input class="search" id="messageSearch" placeholder="Nachrichten durchsuchen…"></div><div class="notice">Du kannst Nachrichten hier als Admin dauerhaft aus dem Chat löschen. Das Löschen kann nicht rückgängig gemacht werden.</div><div id="messagesTable" class="tablewrap"></div></div>
@@ -104,7 +113,7 @@
     const ADMIN_UID="OiXzubR4UFUc3maV2WATBUc1IW32";
     const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app);
     const $=id=>document.getElementById(id);
-    let users={},online={},messages={},moderation={},selectedUid=null;
+    let users={},online={},messages={},moderation={},loginHistory={},selectedUid=null;
     const safe=(value,max=300)=>String(value??"").slice(0,max);
     const esc=value=>safe(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
     const date=value=>typeof value==="number"?new Date(value).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"}):"—";
@@ -113,7 +122,7 @@
     function showView(name){
       document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===name));
       document.querySelectorAll(".nav").forEach(b=>b.classList.toggle("active",b.dataset.view===name));
-      const titles={overview:["Übersicht","Aktueller Überblick über deine Community."],users:["Nutzer","Mitglieder und ihr aktueller Online-Status."],moderation:["Moderation","Timeouts und dauerhafte Bans verwalten."],messages:["Nachrichten","Chatverlauf prüfen und problematische Nachrichten entfernen."]};
+      const titles={overview:["Übersicht","Aktueller Überblick über deine Community."],users:["Nutzer","Mitglieder und ihr aktueller Online-Status."],moderation:["Moderation","Timeouts und dauerhafte Bans verwalten."],messages:["Nachrichten","Chatverlauf prüfen und problematische Nachrichten entfernen."],logins:["Login-Verlauf","Anmeldezeiten und erkannte IP-Adressen."]};
       $("pageTitle").textContent=titles[name][0];$("pageSub").textContent=titles[name][1];render();
     }
     function renderUsers(){
@@ -230,6 +239,17 @@
       try{await remove(ref(db,"moderation/"+uid));$("moderationFeedback").textContent="Sperre aufgehoben.";}
       catch(error){$("moderationFeedback").textContent="Fehler: "+error.message;}
     }
+    function renderLogins(){
+      const term=($("loginSearch")?.value||"").trim().toLowerCase();
+      const entries=Object.entries(loginHistory).flatMap(([uid,records])=>Object.entries(records||{}).map(([id,record])=>({uid,id,...(record||{})})))
+        .sort((a,b)=>(Number(b.timestamp)||0)-(Number(a.timestamp)||0));
+      const filtered=entries.filter(entry=>(userName(entry.uid)+" "+entry.uid+" "+safe(entry.ip)+" "+safe(entry.provider)).toLowerCase().includes(term)).slice(0,500);
+      const ips=new Set(entries.map(entry=>safe(entry.ip)).filter(ip=>ip&&ip!=="Nicht verfügbar"));
+      $("statLoginCount").textContent=String(entries.length);
+      $("statIpCount").textContent=String(ips.size);
+      $("loginTable").innerHTML=table(["Nutzer","IP-Adresse","Anmeldung","Zeitpunkt","UID"],filtered.map(entry=>
+        '<tr><td><strong>'+esc(userName(entry.uid))+'</strong>'+(entry.uid===ADMIN_UID?' <span class="admin-tag">ADMIN</span>':'')+'</td><td><code>'+esc(entry.ip||"Nicht verfügbar")+'</code></td><td>'+esc(entry.provider||"Unbekannt")+'</td><td>'+esc(date(entry.timestamp))+'</td><td><code>'+esc(entry.uid.slice(0,9))+'…</code></td></tr>'));
+    }
     function render(){
       const userIds=new Set([...Object.keys(users),...Object.keys(online)]);
       const onlineIds=Object.keys(online).filter(id=>online[id]?.online===true);
@@ -237,13 +257,14 @@
       const today=new Date();today.setHours(0,0,0,0);
       $("statUsers").textContent=String(userIds.size);$("statOnline").textContent=String(onlineIds.length);$("statMessages").textContent=String(messageList.length);
       $("statToday").textContent=String(messageList.filter(m=>typeof m?.timestamp==="number"&&m.timestamp>=today.getTime()).length);
-      renderOnline();renderUsers();renderModeration();renderMessages();
+      renderOnline();renderUsers();renderModeration();renderMessages();renderLogins();
       renderMessages("recentPreview",5);
     }
     document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
     document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.goto)));
     $("userSearch").addEventListener("input",renderUsers);
     $("messageSearch").addEventListener("input",()=>renderMessages("messagesTable",500,$("messageSearch").value.trim()));
+    $("loginSearch").addEventListener("input",renderLogins);
     document.addEventListener("click",event=>{
       const rename=event.target.closest("[data-rename]");if(rename){renameUser(rename.dataset.rename);return;}
       const manage=event.target.closest("[data-moderate]");if(manage){openModeration(manage.dataset.moderate);return;}
@@ -280,13 +301,14 @@
       if(user.uid!==ADMIN_UID){$("loading").classList.add("hidden");$("denied").classList.remove("hidden");return;}
       $("adminEmail").textContent=user.email||"Administrator";
       try{
-        const [u,o,m,mod]=await Promise.all([get(ref(db,"usernames")),get(ref(db,"onlineUsers")),get(ref(db,"messages")),get(ref(db,"moderation"))]);
-        users=u.val()||{};online=o.val()||{};messages=m.val()||{};moderation=mod.val()||{};
+        const [u,o,m,mod,logs]=await Promise.all([get(ref(db,"usernames")),get(ref(db,"onlineUsers")),get(ref(db,"messages")),get(ref(db,"moderation")),get(ref(db,"loginHistory"))]);
+        users=u.val()||{};online=o.val()||{};messages=m.val()||{};moderation=mod.val()||{};loginHistory=logs.val()||{};
         $("loading").classList.add("hidden");$("app").classList.remove("hidden");render();
         onValue(ref(db,"usernames"),s=>{users=s.val()||{};render();});
         onValue(ref(db,"onlineUsers"),s=>{online=s.val()||{};render();});
         onValue(ref(db,"messages"),s=>{messages=s.val()||{};render();});
         onValue(ref(db,"moderation"),s=>{moderation=s.val()||{};render();});
+        onValue(ref(db,"loginHistory"),s=>{loginHistory=s.val()||{};renderLogins();});
       }catch(error){$("loading").textContent="Daten konnten nicht geladen werden: "+error.message;}
     });
   </script>
