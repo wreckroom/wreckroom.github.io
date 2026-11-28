@@ -175,7 +175,9 @@
     .music-progress { min-width:0;flex:1;accent-color:#e8edf5;cursor:pointer; }
     .music-time { color:#9aaac2;font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap; }
     .music-volume { width:68px;accent-color:#e8edf5; }
-    .music-embed { display:block;width:100%;height:80px;margin-top:12px;border:0;border-radius:10px;background:#080e19; }
+    .music-embed { display:block;width:100%;margin-top:12px;border:0;border-radius:10px;background:#080e19;overflow:hidden; }
+    .music-embed-spotify { height:152px; }
+    .music-embed-youtube { height:auto;aspect-ratio:16/9;min-height:200px; }
     .music-sc-frame { position:absolute;width:1px;height:1px;left:-10000px;top:auto;opacity:0;pointer-events:none;border:0; }
     .music-sc-controls { display:flex;align-items:center;gap:12px;margin-top:13px; }
     .music-sc-time { color:#9aaac2;font-size:11px;font-variant-numeric:tabular-nums; }
@@ -529,11 +531,17 @@
     function musicEmbedUrl(music) {
       try {
         const url = new URL(music.url);
-        if (music.source === "spotify" && url.hostname.endsWith("spotify.com")) return "https://open.spotify.com/embed/" + url.pathname.replace(/^\/+/, "").replace(/^embed\//, "");
+        if (music.source === "spotify" && (url.hostname === "open.spotify.com" || url.hostname === "play.spotify.com")) {
+          const parts = url.pathname.split("/").filter(Boolean).filter(part => !/^intl-[a-z]{2}$/i.test(part) && part !== "embed");
+          if (parts.length >= 2 && ["track", "album", "playlist", "episode", "show"].includes(parts[0])) {
+            return "https://open.spotify.com/embed/" + parts[0] + "/" + encodeURIComponent(parts[1]) + "?utm_source=generator&theme=0";
+          }
+        }
         if (music.source === "youtube") {
-          let id = url.hostname.includes("youtu.be") ? url.pathname.slice(1) : url.searchParams.get("v");
+          let id = url.hostname.includes("youtu.be") ? url.pathname.slice(1).split("/")[0] : url.searchParams.get("v");
           if (!id && url.pathname.includes("/embed/")) id = url.pathname.split("/embed/")[1].split("/")[0];
-          return id ? "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) + "?autoplay=1&enablejsapi=1" : "";
+          if (!id && url.pathname.includes("/shorts/")) id = url.pathname.split("/shorts/")[1].split("/")[0];
+          return id ? "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) + "?playsinline=1&rel=0&controls=1" : "";
         }
         if (music.source === "soundcloud" && (url.hostname.endsWith("soundcloud.com") || url.hostname.endsWith("on.soundcloud.com"))) {
           return "https://w.soundcloud.com/player/?url=" + encodeURIComponent(url.href) + "&color=%23cbd5e1&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=false";
@@ -584,7 +592,8 @@
         const pauseIcon = '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>';
         play.innerHTML = playIcon;
         const time = document.createElement("span"); time.className = "music-sc-time"; time.textContent = "0:00 / 0:00";
-        controls.append(play, time); musicViewContent.append(controls);
+        const volume = document.createElement("input"); volume.type = "range"; volume.className = "music-volume"; volume.min = "0"; volume.max = "1"; volume.step = ".01"; volume.value = ".8"; volume.setAttribute("aria-label", "Volume");
+        controls.append(play, time, volume); musicViewContent.append(controls);
         const frame = document.createElement("iframe"); frame.className = "music-sc-frame"; frame.title = "SoundCloud audio"; frame.allow = "autoplay"; frame.src = "https://w.soundcloud.com/player/?url=" + encodeURIComponent(music.url) + "&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false&show_teaser=false";
         musicViewContent.append(frame);
         const initSoundCloud = () => {
@@ -608,7 +617,7 @@
       } else {
         const embedUrl = musicEmbedUrl(music);
         if (embedUrl) {
-          const frame = document.createElement("iframe"); frame.className = "music-embed"; frame.src = embedUrl; frame.title = "Music player"; frame.loading = "lazy"; frame.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"; frame.referrerPolicy = "strict-origin-when-cross-origin"; musicViewContent.append(frame);
+          const frame = document.createElement("iframe"); frame.className = "music-embed " + (music.source === "youtube" ? "music-embed-youtube" : "music-embed-spotify"); frame.src = embedUrl; frame.title = "Music player"; frame.loading = "lazy"; frame.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"; frame.referrerPolicy = "strict-origin-when-cross-origin"; musicViewContent.append(frame);
         } else {
           const note = document.createElement("p"); note.className = "music-empty"; note.textContent = "This music link could not be embedded."; musicViewContent.append(note);
         }
