@@ -533,7 +533,7 @@
         if (music.source === "youtube") {
           let id = url.hostname.includes("youtu.be") ? url.pathname.slice(1) : url.searchParams.get("v");
           if (!id && url.pathname.includes("/embed/")) id = url.pathname.split("/embed/")[1].split("/")[0];
-          return id ? "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) : "";
+          return id ? "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) + "?autoplay=1&enablejsapi=1" : "";
         }
         if (music.source === "soundcloud" && (url.hostname.endsWith("soundcloud.com") || url.hostname.endsWith("on.soundcloud.com"))) {
           return "https://w.soundcloud.com/player/?url=" + encodeURIComponent(url.href) + "&color=%23cbd5e1&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=false";
@@ -566,7 +566,7 @@
         const progress = document.createElement("input"); progress.type = "range"; progress.className = "music-progress"; progress.min = "0"; progress.max = "1000"; progress.value = "0"; progress.setAttribute("aria-label", "Track progress");
         const time = document.createElement("span"); time.className = "music-time"; time.textContent = "0:00 / 0:00";
         const volume = document.createElement("input"); volume.type = "range"; volume.className = "music-volume"; volume.min = "0"; volume.max = "1"; volume.step = ".01"; volume.value = ".8"; volume.setAttribute("aria-label", "Volume");
-        const audio = new Audio(music.url); audio.preload = "metadata"; audio.volume = .8; profileAudio = audio;
+        const audio = new Audio(music.url); audio.preload = "auto"; audio.volume = .8; profileAudio = audio;
         play.addEventListener("click", async () => { if (audio.paused) { try { await audio.play(); } catch (_) {} } else audio.pause(); });
         audio.addEventListener("play", () => { play.innerHTML = pauseIcon; play.setAttribute("aria-label", "Pause"); });
         audio.addEventListener("pause", () => { play.innerHTML = playIcon; play.setAttribute("aria-label", "Play"); });
@@ -575,7 +575,7 @@
         audio.addEventListener("ended", () => { progress.value = "0"; });
         progress.addEventListener("input", () => { if (audio.duration) audio.currentTime = Number(progress.value) / 1000 * audio.duration; });
         volume.addEventListener("input", () => { audio.volume = Number(volume.value); });
-        controls.append(play, progress, time, volume); musicViewContent.append(controls);
+        controls.append(play, progress, time, volume); musicViewContent.append(controls);\n        audio.play().catch(() => { /* Browser autoplay policy may require a user gesture. */ });
       } else if (music.source === "soundcloud") {
         const controls = document.createElement("div"); controls.className = "music-sc-controls";
         const play = document.createElement("button"); play.type = "button"; play.className = "music-play"; play.setAttribute("aria-label", "Play");
@@ -590,12 +590,12 @@
           if (!window.SC || !window.SC.Widget) return;
           const widget = window.SC.Widget(frame);
           let durationMs = 0;
-          widget.bind(window.SC.Widget.Events.READY, () => widget.getDuration(value => { durationMs = value || 0; time.textContent = "0:00 / " + formatMusicTime(durationMs / 1000); }));
+          widget.bind(window.SC.Widget.Events.READY, () => { widget.setVolume(80); widget.getDuration(value => { durationMs = value || 0; time.textContent = "0:00 / " + formatMusicTime(durationMs / 1000); }); widget.play(); });
           widget.bind(window.SC.Widget.Events.PLAY, () => { play.innerHTML = pauseIcon; play.setAttribute("aria-label", "Pause"); });
           widget.bind(window.SC.Widget.Events.PAUSE, () => { play.innerHTML = playIcon; play.setAttribute("aria-label", "Play"); });
           widget.bind(window.SC.Widget.Events.FINISH, () => { play.innerHTML = playIcon; play.setAttribute("aria-label", "Play"); time.textContent = "0:00 / " + formatMusicTime(durationMs / 1000); });
           widget.bind(window.SC.Widget.Events.PLAY_PROGRESS, event => { if (!durationMs && event.duration) durationMs = event.duration; time.textContent = formatMusicTime((event.currentPosition || 0) / 1000) + " / " + formatMusicTime((durationMs || event.duration || 0) / 1000); });
-          play.addEventListener("click", () => widget.isPaused(paused => paused ? widget.play() : widget.pause()));
+          play.addEventListener("click", () => widget.isPaused(paused => paused ? widget.play() : widget.pause()));\n          volume.addEventListener("input", () => widget.setVolume(Math.round(Number(volume.value) * 100)));
         };
         if (window.SC && window.SC.Widget) initSoundCloud();
         else {
