@@ -116,6 +116,12 @@
     .profile-upload-row input[type="file"] { max-width:100%;color:var(--muted);font-size:11px; }
     .profile-upload-row button { padding:8px 10px;font-size:11px; }
     .profile-upload-note { margin:7px 0 0;color:#71829d;font-size:11px;line-height:1.5; }
+    .gradient-controls { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+    .gradient-color { display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:11px;background:#0b1322; }
+    .gradient-color input[type="color"] { width:34px;height:30px;padding:0;border:0;background:transparent;cursor:pointer; }
+    .gradient-color span { color:var(--muted);font-size:11px;font-weight:700; }
+    .gradient-preview { height:34px;margin-top:10px;border:1px solid rgba(255,255,255,.12);border-radius:10px; }
+    .gradient-name { color:transparent !important;background-clip:text !important;-webkit-background-clip:text !important;-webkit-text-fill-color:transparent !important; }
     .profile-avatar { width:68px;height:68px;flex:0 0 68px;border-radius:20px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#24476b,#333d72);font-size:25px;font-weight:800; }
     .profile-avatar img { width:100%;height:100%;object-fit:cover; }
     .profile-name { margin:0;font-size:21px;overflow-wrap:anywhere; }
@@ -210,6 +216,7 @@
           <div class="profile-upload-row"><input type="file" id="profileBannerFile" accept="image/png,image/jpeg,image/webp,image/gif"><button type="button" id="removeProfileBanner">Remove banner</button></div>
         </div>
         <p class="profile-upload-note">PNG, JPG, WEBP oder GIF · max. 5 MB je Bild</p>
+        <div class="profile-section"><label>PROFILE GRADIENT</label><div class="gradient-controls"><label class="gradient-color"><input type="color" id="gradientStart" value="#70c5ff"><span>Start color</span></label><label class="gradient-color"><input type="color" id="gradientEnd" value="#9b7cff"><span>End color</span></label></div><div class="gradient-preview" id="gradientPreview"></div><p class="profile-upload-note">Your gradient colors appear on your name in chat and on your profile.</p></div>
         <div class="profile-section"><label for="profileBioInput">ABOUT ME · MAX. 160 CHARACTERS</label><textarea class="profile-editor" id="profileBioInput" maxlength="160" placeholder="Tell the community a little about yourself…"></textarea></div>
       </div>
       <p class="profile-status" id="profileStatus" role="status"></p>
@@ -310,6 +317,7 @@
       name.dataset.profileUid = String(message.uid || "");
       name.textContent = String(message.name || "Member").slice(0, 30);
       if (message.uid === ADMIN_UID) name.classList.add("admin-name");
+      else applyNameGradient(name, message.gradientStart, message.gradientEnd);
       const time = document.createElement("span");
       time.className = "message-time";
       if (typeof message.timestamp === "number") {
@@ -346,6 +354,7 @@
         name.dataset.profileUid = childSnapshot.key;
         name.textContent = String(person.name || "Member").slice(0, 30);
         if (childSnapshot.key === ADMIN_UID) name.classList.add("admin-name");
+        else applyNameGradient(name, person.gradientStart, person.gradientEnd);
         row.append(dot, name);
         friendList.append(row);
       });
@@ -365,8 +374,17 @@
     const profileEdit = document.getElementById("profileEdit");
     const profileSave = document.getElementById("profileSave");
     let openedProfileUid = null;
-    let currentProfileData = { bio: "", photoURL: "", bannerURL: "" };
-    let editingProfileData = { photoURL: "", bannerURL: "" };
+    let currentProfileData = { bio: "", photoURL: "", bannerURL: "", gradientStart: "#70c5ff", gradientEnd: "#9b7cff" };
+    let editingProfileData = { photoURL: "", bannerURL: "", gradientStart: "#70c5ff", gradientEnd: "#9b7cff" };
+    const gradientStartInput = document.getElementById("gradientStart");
+    const gradientEndInput = document.getElementById("gradientEnd");
+    const gradientPreview = document.getElementById("gradientPreview");
+    const DEFAULT_GRADIENT_START = "#70c5ff", DEFAULT_GRADIENT_END = "#9b7cff";
+    function validHexColor(value, fallback) { return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback; }
+    function profileGradient(start, end) { return `linear-gradient(110deg, ${validHexColor(start, DEFAULT_GRADIENT_START)}, ${validHexColor(end, DEFAULT_GRADIENT_END)})`; }
+    function applyNameGradient(element, start, end, isAdmin = false) { if (!element || isAdmin) return; element.style.backgroundImage = profileGradient(start, end); element.classList.add("gradient-name"); }
+    function updateGradientPreview() { gradientPreview.style.background = profileGradient(gradientStartInput.value, gradientEndInput.value); }
+    gradientStartInput.addEventListener("input", updateGradientPreview); gradientEndInput.addEventListener("input", updateGradientPreview); updateGradientPreview();
     const profileBanner = document.getElementById("profileBanner");
     const profilePhotoFile = document.getElementById("profilePhotoFile");
     const profileBannerFile = document.getElementById("profileBannerFile");
@@ -379,7 +397,9 @@
       if (photo) { const img = document.createElement("img"); img.src = photo; img.alt = ""; img.referrerPolicy = "no-referrer"; profileAvatar.appendChild(img); }
       else profileAvatar.textContent = (fallbackName || "M").trim().slice(0,1).toUpperCase();
       const banner = safeImageUrl(bannerURL);
-      profileBanner.style.backgroundImage = banner ? "url(" + JSON.stringify(banner) + ")" : "linear-gradient(120deg,#1e3d60,#343d70)";
+      const start = validHexColor(currentProfileData.gradientStart, DEFAULT_GRADIENT_START);
+      const end = validHexColor(currentProfileData.gradientEnd, DEFAULT_GRADIENT_END);
+      profileBanner.style.backgroundImage = banner ? "linear-gradient(120deg,rgba(0,0,0,.08),rgba(0,0,0,.08)),url(" + JSON.stringify(banner) + ")" : profileGradient(start, end);
     }
     async function uploadProfileImage(file, folder) {
       if (!file) return "";
@@ -425,11 +445,14 @@
         profileCaption.textContent = targetUid === ADMIN_UID ? "Wreckroom administrator" : "Wreckroom member";
         profileBio.textContent = typeof profile.bio === "string" && profile.bio.trim() ? profile.bio : "No bio yet.";
         const photo = safeImageUrl(profile.photoURL) || (targetUid === uid ? safeImageUrl(auth.currentUser?.photoURL) : "");
-        renderProfileImages(photo, profile.bannerURL, savedName);
         if (targetUid === uid) {
-          currentProfileData = { bio: profile.bio || "", photoURL: profile.photoURL || "", bannerURL: profile.bannerURL || "" };
-          editingProfileData = { photoURL: photo, bannerURL: profile.bannerURL || "" };
+          currentProfileData = { bio: profile.bio || "", photoURL: profile.photoURL || "", bannerURL: profile.bannerURL || "", gradientStart: validHexColor(profile.gradientStart, DEFAULT_GRADIENT_START), gradientEnd: validHexColor(profile.gradientEnd, DEFAULT_GRADIENT_END) };
+          editingProfileData = { photoURL: photo, bannerURL: profile.bannerURL || "", gradientStart: currentProfileData.gradientStart, gradientEnd: currentProfileData.gradientEnd };
+          gradientStartInput.value = currentProfileData.gradientStart; gradientEndInput.value = currentProfileData.gradientEnd; updateGradientPreview();
         }
+        profileName.style.backgroundImage = ""; profileName.classList.remove("gradient-name");
+        if (targetUid !== ADMIN_UID) applyNameGradient(profileName, profile.gradientStart, profile.gradientEnd);
+        renderProfileImages(photo, profile.bannerURL, savedName);
         profileBioInput.value = typeof profile.bio === "string" ? profile.bio.slice(0,160) : "";
         profileStatus.textContent = "";
       } catch (error) {
@@ -449,6 +472,7 @@
       profileSave.hidden = false;
       profileStatus.textContent = "";
       editingProfileData = { ...currentProfileData, photoURL: safeImageUrl(currentProfileData.photoURL) || safeImageUrl(auth.currentUser?.photoURL) };
+      gradientStartInput.value = validHexColor(currentProfileData.gradientStart, DEFAULT_GRADIENT_START); gradientEndInput.value = validHexColor(currentProfileData.gradientEnd, DEFAULT_GRADIENT_END); updateGradientPreview();
       profilePhotoFile.value = ""; profileBannerFile.value = "";
       renderProfileImages(editingProfileData.photoURL, editingProfileData.bannerURL, username);
       profileBioInput.focus();
@@ -474,10 +498,13 @@
       profileSave.disabled = true;
       profileStatus.textContent = "Saving…";
       try {
-        const savedProfile = { ...currentProfileData, bio, photoURL: safeImageUrl(editingProfileData.photoURL), bannerURL: safeImageUrl(editingProfileData.bannerURL), updatedAt: Date.now() };
+        const savedProfile = { ...currentProfileData, bio, photoURL: safeImageUrl(editingProfileData.photoURL), bannerURL: safeImageUrl(editingProfileData.bannerURL), gradientStart: validHexColor(gradientStartInput.value, DEFAULT_GRADIENT_START), gradientEnd: validHexColor(gradientEndInput.value, DEFAULT_GRADIENT_END), updatedAt: Date.now() };
         await set(ref(db, "profiles/" + uid), savedProfile);
         currentProfileData = savedProfile;
         renderProfileImages(savedProfile.photoURL || auth.currentUser.photoURL || "", savedProfile.bannerURL, username);
+        profileName.style.backgroundImage = ""; profileName.classList.remove("gradient-name");
+        if (uid !== ADMIN_UID) applyNameGradient(profileName, savedProfile.gradientStart, savedProfile.gradientEnd);
+        await set(ref(db, `onlineUsers/${uid}`), { name: username, online: true, gradientStart: savedProfile.gradientStart, gradientEnd: savedProfile.gradientEnd });
         profileBio.textContent = bio || "No bio yet.";
         profileBioView.hidden = false;
         profileBioEdit.hidden = true;
@@ -532,7 +559,9 @@
 
         const userStatusRef = ref(db, `onlineUsers/${uid}`);
         await onDisconnect(userStatusRef).remove();
-        await set(userStatusRef, { name: username, online: true });
+        const initialProfileSnapshot = await get(ref(db, "profiles/" + uid));
+        const initialProfile = initialProfileSnapshot.val() || {};
+        await set(userStatusRef, { name: username, online: true, gradientStart: validHexColor(initialProfile.gradientStart, DEFAULT_GRADIENT_START), gradientEnd: validHexColor(initialProfile.gradientEnd, DEFAULT_GRADIENT_END) });
 
         onValue(ref(db, `usernames/${uid}`), snapshot => {
           if (!snapshot.exists()) return;
@@ -583,6 +612,7 @@
         const latestProfile = profileSnapshot.val() || {};
         await push(ref(db, "messages"), {
           uid, name: username, photoURL: safeImageUrl(latestProfile.photoURL) || auth.currentUser?.photoURL || "",
+          gradientStart: validHexColor(latestProfile.gradientStart, DEFAULT_GRADIENT_START), gradientEnd: validHexColor(latestProfile.gradientEnd, DEFAULT_GRADIENT_END),
           text: text.slice(0, 1000), timestamp: serverTimestamp()
         });
         msgInput.value = "";
