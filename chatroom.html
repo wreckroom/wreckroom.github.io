@@ -136,6 +136,32 @@
     .profile-status { min-height:18px;margin:10px 0 0;color:var(--muted);font-size:12px; }
     .profile-admin { color:#ff6678;font-size:10px;font-weight:900;letter-spacing:.08em; }
 
+
+    .music-section { margin:18px 0; }
+    .music-section-title { display:block;margin-bottom:10px;color:#c4d2e6;font-size:12px;font-weight:800;letter-spacing:.08em; }
+    .music-source-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px; }
+    .music-source { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:76px;padding:10px 5px;background:#1c2633;border:1px solid rgba(255,255,255,.07);border-radius:12px;color:#e8edf5;font-size:11px;font-weight:700; }
+    .music-source svg { width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; }
+    .music-source.active { border-color:rgba(112,197,255,.65);background:rgba(112,197,255,.12);box-shadow:0 0 0 1px rgba(112,197,255,.12) inset; }
+    .music-field { width:100%;margin-top:9px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;outline:none;background:#0b1322;color:var(--text);font:inherit;font-size:12px; }
+    .music-field:focus { border-color:rgba(112,197,255,.65); }
+    .music-upload { display:block;width:100%;margin-top:10px;color:var(--muted);font-size:11px; }
+    .music-help { margin:8px 0 0;color:#71829d;font-size:11px;line-height:1.5; }
+    .music-view { margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:14px;background:rgba(8,14,25,.45); }
+    .music-kicker { color:#8d9bb1;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase; }
+    .music-track-title { margin:5px 0 2px;color:#f1f5fb;font-size:14px;font-weight:800;overflow-wrap:anywhere; }
+    .music-track-artist { color:var(--muted);font-size:11px; }
+    .music-selected { margin-top:3px;color:#71829d;font-size:10px; }
+    .music-controls { display:flex;align-items:center;gap:9px;margin-top:12px; }
+    .music-play { width:34px;height:34px;flex:0 0 34px;padding:0;border:0;border-radius:50%;display:grid;place-items:center;background:#e8edf5;color:#111827; }
+    .music-play svg { width:15px;height:15px;fill:currentColor;stroke:none; }
+    .music-progress { min-width:0;flex:1;accent-color:#e8edf5;cursor:pointer; }
+    .music-time { color:#9aaac2;font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap; }
+    .music-volume { width:68px;accent-color:#e8edf5; }
+    .music-embed { display:block;width:100%;height:80px;margin-top:12px;border:0;border-radius:10px;background:#080e19; }
+    .music-empty { margin:0;color:#71829d;font-size:12px; }
+    @media(max-width:420px) { .music-source-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .music-volume { width:48px; } }
+
     @media(max-width:980px) {
       .shell { grid-template-columns:170px minmax(0,1fr); }
       .right-panel { grid-column:1/-1;min-height:120px; }
@@ -209,6 +235,10 @@
         <label>ABOUT ME</label>
         <div class="profile-bio" id="profileBio">No bio yet.</div>
       </div>
+        <div class="music-section" id="profileMusicView">
+          <span class="music-section-title">MY MUSIC</span>
+          <div class="music-view" id="musicViewContent"><p class="music-empty">No song selected yet.</p></div>
+        </div>
       <div class="profile-section" id="profileBioEdit" hidden>
         <label for="profilePhotoFile">PROFILE PICTURE</label>
         <div class="profile-upload-row"><input type="file" id="profilePhotoFile" accept="image/png,image/jpeg,image/webp,image/gif"><button type="button" id="removeProfilePhoto">Remove picture</button></div>
@@ -218,6 +248,21 @@
         </div>
         <p class="profile-upload-note">PNG, JPG, WEBP oder GIF · max. 5 MB je Bild</p>
         <div class="profile-section"><label>PROFILE BACKGROUND GRADIENT</label><div class="gradient-controls"><label class="gradient-color"><input type="color" id="gradientStart" value="#70c5ff"><span>Start color</span></label><label class="gradient-color"><input type="color" id="gradientEnd" value="#9b7cff"><span>End color</span></label></div><div class="gradient-preview" id="gradientPreview"></div><p class="profile-upload-note">Your gradient colors customize the background of your profile card.</p></div>
+
+        <div class="music-section">
+          <span class="music-section-title">MY MUSIC · PROFILE SONG</span>
+          <div class="music-source-grid" id="musicSourceGrid">
+            <button type="button" class="music-source active" data-music-source="mp3"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><span>MP3 upload</span></button>
+            <button type="button" class="music-source" data-music-source="spotify"><svg viewBox="0 0 24 24"><path d="M4 9c5-2 11-1 16 2M5 13c4-1 9 0 13 2M6 17c3-1 7 0 10 2"/></svg><span>Spotify</span></button>
+            <button type="button" class="music-source" data-music-source="youtube"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z"/></svg><span>YouTube</span></button>
+            <button type="button" class="music-source" data-music-source="soundcloud"><svg viewBox="0 0 24 24"><path d="M3 17v-4m4 6V9m4 10V5m4 14V8m4 11v-6m3 4v-3"/></svg><span>SoundCloud</span></button>
+          </div>
+          <input class="music-field" id="musicTitleInput" maxlength="100" placeholder="Song title">
+          <input class="music-field" id="musicArtistInput" maxlength="80" placeholder="Artist name">
+          <div id="musicMp3Fields"><input class="music-upload" type="file" id="musicFileInput" accept=".mp3,audio/mpeg"><p class="music-help">Choose an MP3 from your PC. It will be uploaded so visitors to your profile can listen too (max. 15 MB).</p></div>
+          <div id="musicLinkFields" hidden><input class="music-field" id="musicUrlInput" type="url" maxlength="500" placeholder="Paste Spotify, YouTube or SoundCloud link"><p class="music-help">Paste a public track or video link from the selected service.</p></div>
+          <button type="button" id="removeMusicBtn" style="margin-top:10px;padding:8px 11px;font-size:11px;">Remove song</button>
+        </div>
         <div class="profile-section"><label for="profileBioInput">ABOUT ME · MAX. 160 CHARACTERS</label><textarea class="profile-editor" id="profileBioInput" maxlength="160" placeholder="Tell the community a little about yourself…"></textarea></div>
       </div>
       <p class="profile-status" id="profileStatus" role="status"></p>
@@ -416,6 +461,112 @@
       return result.secure_url;
     }
 
+
+    // Profile music: MP3 files are uploaded to Cloudinary so every profile visitor can play them.
+    const musicViewContent = document.getElementById("musicViewContent");
+    const musicSourceGrid = document.getElementById("musicSourceGrid");
+    const musicTitleInput = document.getElementById("musicTitleInput");
+    const musicArtistInput = document.getElementById("musicArtistInput");
+    const musicUrlInput = document.getElementById("musicUrlInput");
+    const musicFileInput = document.getElementById("musicFileInput");
+    const musicMp3Fields = document.getElementById("musicMp3Fields");
+    const musicLinkFields = document.getElementById("musicLinkFields");
+    const removeMusicBtn = document.getElementById("removeMusicBtn");
+    let selectedMusicSource = "mp3";
+    let editingMusicData = null;
+    let profileAudio = null;
+    function setMusicSource(source) {
+      selectedMusicSource = source;
+      musicSourceGrid.querySelectorAll("[data-music-source]").forEach(button => button.classList.toggle("active", button.dataset.musicSource === source));
+      musicMp3Fields.hidden = source !== "mp3";
+      musicLinkFields.hidden = source === "mp3";
+    }
+    musicSourceGrid.addEventListener("click", event => {
+      const button = event.target.closest("[data-music-source]");
+      if (button) setMusicSource(button.dataset.musicSource);
+    });
+    function musicEmbedUrl(music) {
+      try {
+        const url = new URL(music.url);
+        if (music.source === "spotify" && url.hostname.endsWith("spotify.com")) return "https://open.spotify.com/embed/" + url.pathname.replace(/^\/+/, "").replace(/^embed\//, "");
+        if (music.source === "youtube") {
+          let id = url.hostname.includes("youtu.be") ? url.pathname.slice(1) : url.searchParams.get("v");
+          if (!id && url.pathname.includes("/embed/")) id = url.pathname.split("/embed/")[1].split("/")[0];
+          return id ? "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) : "";
+        }
+        if (music.source === "soundcloud" && (url.hostname.endsWith("soundcloud.com") || url.hostname.endsWith("on.soundcloud.com"))) {
+          return "https://w.soundcloud.com/player/?url=" + encodeURIComponent(url.href) + "&color=%23cbd5e1&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=false";
+        }
+      } catch (_) {}
+      return "";
+    }
+    function formatMusicTime(seconds) {
+      if (!Number.isFinite(seconds)) return "0:00";
+      const mins = Math.floor(seconds / 60), secs = Math.floor(seconds % 60);
+      return mins + ":" + String(secs).padStart(2, "0");
+    }
+    function renderProfileMusic(music, ownerName) {
+      musicViewContent.replaceChildren();
+      profileAudio = null;
+      if (!music || !music.source || (!music.url && music.source !== "mp3")) {
+        const empty = document.createElement("p"); empty.className = "music-empty"; empty.textContent = "No song selected yet."; musicViewContent.append(empty); return;
+      }
+      const kicker = document.createElement("div"); kicker.className = "music-kicker"; kicker.textContent = "NOW PLAYING · " + music.source.toUpperCase();
+      const title = document.createElement("div"); title.className = "music-track-title"; title.textContent = music.title || "Untitled track";
+      const artist = document.createElement("div"); artist.className = "music-track-artist"; artist.textContent = music.artist || "Unknown artist";
+      const selected = document.createElement("div"); selected.className = "music-selected"; selected.textContent = "Selected by " + (ownerName || "this user");
+      musicViewContent.append(kicker, title, artist, selected);
+      if (music.source === "mp3" && /^https:\/\//i.test(music.url || "")) {
+        const controls = document.createElement("div"); controls.className = "music-controls";
+        const play = document.createElement("button"); play.type = "button"; play.className = "music-play"; play.setAttribute("aria-label", "Play");
+        const playIcon = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        const pauseIcon = '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>';
+        play.innerHTML = playIcon;
+        const progress = document.createElement("input"); progress.type = "range"; progress.className = "music-progress"; progress.min = "0"; progress.max = "1000"; progress.value = "0"; progress.setAttribute("aria-label", "Track progress");
+        const time = document.createElement("span"); time.className = "music-time"; time.textContent = "0:00 / 0:00";
+        const volume = document.createElement("input"); volume.type = "range"; volume.className = "music-volume"; volume.min = "0"; volume.max = "1"; volume.step = ".01"; volume.value = ".8"; volume.setAttribute("aria-label", "Volume");
+        const audio = new Audio(music.url); audio.preload = "metadata"; audio.volume = .8; profileAudio = audio;
+        play.addEventListener("click", async () => { if (audio.paused) { try { await audio.play(); } catch (_) {} } else audio.pause(); });
+        audio.addEventListener("play", () => { play.innerHTML = pauseIcon; play.setAttribute("aria-label", "Pause"); });
+        audio.addEventListener("pause", () => { play.innerHTML = playIcon; play.setAttribute("aria-label", "Play"); });
+        audio.addEventListener("timeupdate", () => { progress.value = String(audio.duration ? audio.currentTime / audio.duration * 1000 : 0); time.textContent = formatMusicTime(audio.currentTime) + " / " + formatMusicTime(audio.duration); });
+        audio.addEventListener("loadedmetadata", () => { time.textContent = "0:00 / " + formatMusicTime(audio.duration); });
+        audio.addEventListener("ended", () => { progress.value = "0"; });
+        progress.addEventListener("input", () => { if (audio.duration) audio.currentTime = Number(progress.value) / 1000 * audio.duration; });
+        volume.addEventListener("input", () => { audio.volume = Number(volume.value); });
+        controls.append(play, progress, time, volume); musicViewContent.append(controls);
+      } else {
+        const embedUrl = musicEmbedUrl(music);
+        if (embedUrl) {
+          const frame = document.createElement("iframe"); frame.className = "music-embed"; frame.src = embedUrl; frame.title = "Music player"; frame.loading = "lazy"; frame.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"; frame.referrerPolicy = "strict-origin-when-cross-origin"; musicViewContent.append(frame);
+        } else {
+          const note = document.createElement("p"); note.className = "music-empty"; note.textContent = "This music link could not be embedded."; musicViewContent.append(note);
+        }
+      }
+    }
+    async function uploadProfileMusic(file) {
+      if (!file) return;
+      if (file.type !== "audio/mpeg" && !file.name.toLowerCase().endsWith(".mp3")) throw new Error("Please choose an MP3 file.");
+      if (file.size > 15 * 1024 * 1024) throw new Error("The MP3 file must be 15 MB or smaller.");
+      profileStatus.textContent = "Uploading MP3…";
+      const data = new FormData(); data.append("file", file); data.append("upload_preset", CLOUDINARY_UPLOAD_PRESET); data.append("folder", "wreckroom/profiles/music");
+      const response = await fetch("https://api.cloudinary.com/v1_1/" + CLOUDINARY_CLOUD_NAME + "/video/upload", { method: "POST", body: data });
+      const result = await response.json();
+      if (!response.ok || !result.secure_url) throw new Error(result.error?.message || "MP3 upload failed.");
+      editingMusicData = { source: "mp3", url: result.secure_url, title: musicTitleInput.value.trim(), artist: musicArtistInput.value.trim() };
+      profileStatus.textContent = "MP3 uploaded. Save your profile to publish it.";
+    }
+    musicFileInput.addEventListener("change", async () => {
+      try { await uploadProfileMusic(musicFileInput.files?.[0]); }
+      catch (error) { profileStatus.textContent = error.message || "MP3 upload failed."; musicFileInput.value = ""; }
+    });
+    musicTitleInput.addEventListener("input", () => { if (editingMusicData) editingMusicData.title = musicTitleInput.value.trim(); });
+    musicArtistInput.addEventListener("input", () => { if (editingMusicData) editingMusicData.artist = musicArtistInput.value.trim(); });
+    musicUrlInput.addEventListener("input", () => { editingMusicData = { source: selectedMusicSource, url: musicUrlInput.value.trim(), title: musicTitleInput.value.trim(), artist: musicArtistInput.value.trim() }; });
+    removeMusicBtn.addEventListener("click", () => {
+      editingMusicData = null; musicTitleInput.value = ""; musicArtistInput.value = ""; musicUrlInput.value = ""; musicFileInput.value = ""; profileStatus.textContent = "Song removed. Save your profile to apply the change.";
+    });
+
     function closeProfile() {
       profileModal.classList.remove("open");
       profileEditing = false;
@@ -448,10 +599,15 @@
         else profileName.classList.remove("admin-name");
         profileCaption.textContent = targetUid === ADMIN_UID ? "Wreckroom administrator" : "Wreckroom member";
         profileBio.textContent = typeof profile.bio === "string" && profile.bio.trim() ? profile.bio : "No bio yet.";
+        renderProfileMusic(profile.music || null, savedName);
         const photo = safeImageUrl(profile.photoURL) || (targetUid === uid ? safeImageUrl(auth.currentUser?.photoURL) : "");
         if (targetUid === uid) {
           currentProfileData = { bio: profile.bio || "", photoURL: profile.photoURL || "", bannerURL: profile.bannerURL || "", gradientStart: validHexColor(profile.gradientStart, DEFAULT_GRADIENT_START), gradientEnd: validHexColor(profile.gradientEnd, DEFAULT_GRADIENT_END) };
           editingProfileData = { photoURL: photo, bannerURL: profile.bannerURL || "", gradientStart: currentProfileData.gradientStart, gradientEnd: currentProfileData.gradientEnd };
+          editingMusicData = profile.music ? { ...profile.music } : null;
+          selectedMusicSource = profile.music?.source || "mp3";
+          setMusicSource(selectedMusicSource);
+          musicTitleInput.value = profile.music?.title || ""; musicArtistInput.value = profile.music?.artist || ""; musicUrlInput.value = profile.music?.source && profile.music.source !== "mp3" ? profile.music.url || "" : ""; musicFileInput.value = "";
           gradientStartInput.value = currentProfileData.gradientStart; gradientEndInput.value = currentProfileData.gradientEnd; updateGradientPreview();
         }
         profileName.style.backgroundImage = ""; profileName.classList.remove("gradient-name");
@@ -476,6 +632,9 @@
       profileSave.hidden = false;
       profileStatus.textContent = "";
       editingProfileData = { ...currentProfileData, photoURL: safeImageUrl(currentProfileData.photoURL) || safeImageUrl(auth.currentUser?.photoURL) };
+      editingMusicData = currentProfileData.music ? { ...currentProfileData.music } : null;
+      selectedMusicSource = editingMusicData?.source || "mp3"; setMusicSource(selectedMusicSource);
+      musicTitleInput.value = editingMusicData?.title || ""; musicArtistInput.value = editingMusicData?.artist || ""; musicUrlInput.value = editingMusicData && editingMusicData.source !== "mp3" ? editingMusicData.url || "" : ""; musicFileInput.value = "";
       gradientStartInput.value = validHexColor(currentProfileData.gradientStart, DEFAULT_GRADIENT_START); gradientEndInput.value = validHexColor(currentProfileData.gradientEnd, DEFAULT_GRADIENT_END); updateGradientPreview();
       profilePhotoFile.value = ""; profileBannerFile.value = "";
       renderProfileImages(editingProfileData.photoURL, editingProfileData.bannerURL, username);
@@ -499,10 +658,19 @@
     profileSave.addEventListener("click", async () => {
       if (openedProfileUid !== uid || !auth.currentUser) return;
       const bio = profileBioInput.value.trim().slice(0,160);
+      if (selectedMusicSource !== "mp3" && musicUrlInput.value.trim()) {
+        let parsedMusicUrl; try { parsedMusicUrl = new URL(musicUrlInput.value.trim()); } catch (_) { profileStatus.textContent = "Please enter a valid music link."; return; }
+        const allowed = selectedMusicSource === "spotify" ? parsedMusicUrl.hostname.endsWith("spotify.com") : selectedMusicSource === "youtube" ? (parsedMusicUrl.hostname.endsWith("youtube.com") || parsedMusicUrl.hostname === "youtu.be" || parsedMusicUrl.hostname.endsWith("youtube-nocookie.com")) : (parsedMusicUrl.hostname.endsWith("soundcloud.com") || parsedMusicUrl.hostname.endsWith("on.soundcloud.com"));
+        if (!allowed) { profileStatus.textContent = "The link does not match the selected music service."; return; }
+        editingMusicData = { source: selectedMusicSource, url: parsedMusicUrl.href, title: musicTitleInput.value.trim(), artist: musicArtistInput.value.trim() };
+      }
+      if (selectedMusicSource !== "mp3" && !musicUrlInput.value.trim()) editingMusicData = null;
+      if (selectedMusicSource === "mp3" && musicFileInput.files?.[0] && (!editingMusicData || editingMusicData.source !== "mp3")) { profileStatus.textContent = "Please wait for the MP3 upload to finish."; return; }
+      if (editingMusicData) { editingMusicData.title = musicTitleInput.value.trim(); editingMusicData.artist = musicArtistInput.value.trim(); }
       profileSave.disabled = true;
       profileStatus.textContent = "Saving…";
       try {
-        const savedProfile = { ...currentProfileData, bio, photoURL: safeImageUrl(editingProfileData.photoURL), bannerURL: safeImageUrl(editingProfileData.bannerURL), gradientStart: validHexColor(gradientStartInput.value, DEFAULT_GRADIENT_START), gradientEnd: validHexColor(gradientEndInput.value, DEFAULT_GRADIENT_END), updatedAt: Date.now() };
+        const savedProfile = { ...currentProfileData, bio, music: editingMusicData ? { ...editingMusicData } : null, photoURL: safeImageUrl(editingProfileData.photoURL), bannerURL: safeImageUrl(editingProfileData.bannerURL), gradientStart: validHexColor(gradientStartInput.value, DEFAULT_GRADIENT_START), gradientEnd: validHexColor(gradientEndInput.value, DEFAULT_GRADIENT_END), updatedAt: Date.now() };
         await set(ref(db, "profiles/" + uid), savedProfile);
         currentProfileData = savedProfile;
         renderProfileImages(savedProfile.photoURL || auth.currentUser.photoURL || "", savedProfile.bannerURL, username);
@@ -510,6 +678,7 @@
         if (uid !== ADMIN_UID) applyNameGradient(profileName, savedProfile.gradientStart, savedProfile.gradientEnd);
         await set(ref(db, `onlineUsers/${uid}`), { name: username, online: true, gradientStart: savedProfile.gradientStart, gradientEnd: savedProfile.gradientEnd });
         profileBio.textContent = bio || "No bio yet.";
+        renderProfileMusic(savedProfile.music, username);
         profileBioView.hidden = false;
         profileBioEdit.hidden = true;
         profileEdit.hidden = false;
