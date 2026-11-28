@@ -525,15 +525,6 @@
         setMusicSource(nextSource);
       }
     });
-    function musicEmbedUrl(music) {
-      try {
-        const url = new URL(music.url);
-        if (music.source === "soundcloud" && (url.hostname === "soundcloud.com" || url.hostname.endsWith(".soundcloud.com") || url.hostname === "on.soundcloud.com")) {
-          return "https://w.soundcloud.com/player/?url=" + encodeURIComponent(url.href) + "&color=%23cbd5e1&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=false";
-        }
-      } catch (_) {}
-      return "";
-    }
     function formatMusicTime(seconds) {
       if (!Number.isFinite(seconds)) return "0:00";
       const mins = Math.floor(seconds / 60), secs = Math.floor(seconds % 60);
@@ -600,12 +591,7 @@
           api.addEventListener("load", initSoundCloud, { once: true });
         }
       } else {
-        const embedUrl = musicEmbedUrl(music);
-        if (embedUrl) {
-          const frame = document.createElement("iframe"); frame.className = "music-embed " + (music.source === "youtube" ? "music-embed-youtube" : "music-embed-spotify"); frame.src = embedUrl; frame.title = "Music player"; frame.loading = "lazy"; frame.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"; frame.referrerPolicy = "strict-origin-when-cross-origin"; musicViewContent.append(frame);
-        } else {
-          const note = document.createElement("p"); note.className = "music-empty"; note.textContent = "This music link could not be embedded."; musicViewContent.append(note);
-        }
+        const note = document.createElement("p"); note.className = "music-empty"; note.textContent = "This music source is no longer supported. Please choose MP3 or SoundCloud."; musicViewContent.append(note);
       }
     }
     async function uploadProfileMusic(file) {
