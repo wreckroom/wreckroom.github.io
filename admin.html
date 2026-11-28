@@ -301,14 +301,16 @@
       if(user.uid!==ADMIN_UID){$("loading").classList.add("hidden");$("denied").classList.remove("hidden");return;}
       $("adminEmail").textContent=user.email||"Administrator";
       try{
-        const [u,o,m,mod,logs]=await Promise.all([get(ref(db,"usernames")),get(ref(db,"onlineUsers")),get(ref(db,"messages")),get(ref(db,"moderation")),get(ref(db,"loginHistory"))]);
-        users=u.val()||{};online=o.val()||{};messages=m.val()||{};moderation=mod.val()||{};loginHistory=logs.val()||{};
+        const [u,o,m,mod]=await Promise.all([get(ref(db,"usernames")),get(ref(db,"onlineUsers")),get(ref(db,"messages")),get(ref(db,"moderation"))]);
+        users=u.val()||{};online=o.val()||{};messages=m.val()||{};moderation=mod.val()||{};
+        try { const logs=await get(ref(db,"loginHistory"));loginHistory=logs.val()||{}; }
+        catch(error) { console.warn("Login history rules are not configured yet:",error);loginHistory={}; }
         $("loading").classList.add("hidden");$("app").classList.remove("hidden");render();
         onValue(ref(db,"usernames"),s=>{users=s.val()||{};render();});
         onValue(ref(db,"onlineUsers"),s=>{online=s.val()||{};render();});
         onValue(ref(db,"messages"),s=>{messages=s.val()||{};render();});
         onValue(ref(db,"moderation"),s=>{moderation=s.val()||{};render();});
-        onValue(ref(db,"loginHistory"),s=>{loginHistory=s.val()||{};renderLogins();});
+        onValue(ref(db,"loginHistory"),s=>{loginHistory=s.val()||{};renderLogins();},error=>{console.warn("Login history is unavailable until database rules are updated:",error);});
       }catch(error){$("loading").textContent="Daten konnten nicht geladen werden: "+error.message;}
     });
   </script>
