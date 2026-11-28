@@ -383,7 +383,7 @@
     function validHexColor(value, fallback) { return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback; }
     function profileGradient(start, end) { return `linear-gradient(110deg, ${validHexColor(start, DEFAULT_GRADIENT_START)}, ${validHexColor(end, DEFAULT_GRADIENT_END)})`; }
     function applyNameGradient(element, start, end, isAdmin = false) { if (!element || isAdmin) return; element.style.backgroundImage = profileGradient(start, end); element.classList.add("gradient-name"); }
-    function updateGradientPreview() { gradientPreview.style.background = profileGradient(gradientStartInput.value, gradientEndInput.value); }
+    function updateGradientPreview() { gradientPreview.style.background = profileGradient(gradientStartInput.value, gradientEndInput.value); if (profileBanner && !editingProfileData.bannerURL) profileBanner.style.backgroundImage = profileGradient(gradientStartInput.value, gradientEndInput.value); }
     gradientStartInput.addEventListener("input", updateGradientPreview); gradientEndInput.addEventListener("input", updateGradientPreview); updateGradientPreview();
     const profileBanner = document.getElementById("profileBanner");
     const profilePhotoFile = document.getElementById("profilePhotoFile");
@@ -391,14 +391,14 @@
     const CLOUDINARY_CLOUD_NAME = "nhxdnxif";
     const CLOUDINARY_UPLOAD_PRESET = "ml_default";
     function safeImageUrl(value) { return typeof value === "string" && /^https:\/\//i.test(value) ? value : ""; }
-    function renderProfileImages(photoURL, bannerURL, fallbackName) {
+    function renderProfileImages(photoURL, bannerURL, fallbackName, gradientStart = currentProfileData.gradientStart, gradientEnd = currentProfileData.gradientEnd) {
       profileAvatar.replaceChildren();
       const photo = safeImageUrl(photoURL);
       if (photo) { const img = document.createElement("img"); img.src = photo; img.alt = ""; img.referrerPolicy = "no-referrer"; profileAvatar.appendChild(img); }
       else profileAvatar.textContent = (fallbackName || "M").trim().slice(0,1).toUpperCase();
       const banner = safeImageUrl(bannerURL);
-      const start = validHexColor(currentProfileData.gradientStart, DEFAULT_GRADIENT_START);
-      const end = validHexColor(currentProfileData.gradientEnd, DEFAULT_GRADIENT_END);
+      const start = validHexColor(gradientStart, DEFAULT_GRADIENT_START);
+      const end = validHexColor(gradientEnd, DEFAULT_GRADIENT_END);
       profileBanner.style.backgroundImage = banner ? "linear-gradient(120deg,rgba(0,0,0,.08),rgba(0,0,0,.08)),url(" + JSON.stringify(banner) + ")" : profileGradient(start, end);
     }
     async function uploadProfileImage(file, folder) {
@@ -452,7 +452,7 @@
         }
         profileName.style.backgroundImage = ""; profileName.classList.remove("gradient-name");
         if (targetUid !== ADMIN_UID) applyNameGradient(profileName, profile.gradientStart, profile.gradientEnd);
-        renderProfileImages(photo, profile.bannerURL, savedName);
+        renderProfileImages(photo, profile.bannerURL, savedName, profile.gradientStart, profile.gradientEnd);
         profileBioInput.value = typeof profile.bio === "string" ? profile.bio.slice(0,160) : "";
         profileStatus.textContent = "";
       } catch (error) {
@@ -562,6 +562,7 @@
         const initialProfileSnapshot = await get(ref(db, "profiles/" + uid));
         const initialProfile = initialProfileSnapshot.val() || {};
         await set(userStatusRef, { name: username, online: true, gradientStart: validHexColor(initialProfile.gradientStart, DEFAULT_GRADIENT_START), gradientEnd: validHexColor(initialProfile.gradientEnd, DEFAULT_GRADIENT_END) });
+        if (uid !== ADMIN_UID) applyNameGradient(currentUserLabel, initialProfile.gradientStart, initialProfile.gradientEnd);
 
         onValue(ref(db, `usernames/${uid}`), snapshot => {
           if (!snapshot.exists()) return;
